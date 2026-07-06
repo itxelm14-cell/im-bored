@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="What Should I Do?">
+<title>What Should I Do?</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: linear-gradient(135deg, #0a0a0f 0%, #12121f 60%, #0a0f1a 100%) !important;
+  min-height: 100vh;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  color: #e8e8f0;
+  padding-bottom: 90px;
+}
+#app { width: 100%; max-width: 420px; margin: 0 auto; padding: 24px 16px 20px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* NAV BAR */
+.nav-bar {
+position: fixed; bottom: 0; left: 0; right: 0;
+background: #0f0f1a; border-top: 1px solid #2a2a44;
+display: flex; justify-content: space-around; align-items: center;
+padding: 10px 0 20px; z-index: 50;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 10px; border-radius: 12px; transition: all 0.2s; background: none; border: none; color: #8888aa; font-family: inherit; }
+.nav-item.active { color: #c8b8ff; }
+.nav-item .nav-icon { font-size: 20px; }
+.nav-item .nav-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+
+/* TYPOGRAPHY */
+h1 { font-size: 26px; font-weight: 700; color: #c8b8ff; letter-spacing: 1px; }
+h2 { font-size: 20px; font-weight: 700; color: #c8b8ff; letter-spacing: 1px; }
+h3 { font-size: 16px; font-weight: 700; color: #c8b8ff; letter-spacing: 1px; }
+.center { text-align: center; }
+.subtitle { color: #8888aa; font-size: 12px; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
+.back-btn { background: none; border: none; color: #8888aa; font-size: 14px; cursor: pointer; padding: 0 0 18px; font-family: inherit; display: block; }
+.section-title { font-size: 11px; color: #c8b8ff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; margin-top: 4px; }
+
+/* CARDS */
+.card { background: linear-gradient(135deg, #16152a, #1a1f30) !important; border: 1px solid #2a2a44; border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s; }
+.card:active { border-color: #c8b8ff; }
+.card-row { display: flex; align-items: center; gap: 12px; }
+.card-emoji { font-size: 26px; flex-shrink: 0; }
+.card-info { flex: 1; min-width: 0; }
+.card-name { font-weight: 700; font-size: 14px; color: #e0d8ff; }
+.card-meta { font-size: 11px; color: #8888aa; margin-top: 2px; }
+.card-arrow { color: #c8b8ff; font-size: 18px; flex-shrink: 0; }
+
+/* BIG BUTTONS */
+.big-btn { background: linear-gradient(135deg, #16152a, #1a1f30) !important; border: 1px solid #2a2a44; border-radius: 18px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.2s; width: 100%; text-align: left; }
+.big-btn:active { background: linear-gradient(135deg, #2a1f4a, #1a2a4a) !important; border-color: #c8b8ff; }
+.big-btn .b-emoji { font-size: 28px; flex-shrink: 0; }
+.big-btn .b-label { font-weight: 700; font-size: 15px; color: #e0d8ff; font-family: inherit; display: block; }
+.big-btn .b-sub { font-size: 12px; color: #8888aa; margin-top: 2px; font-family: inherit; display: block; }
+
+/* PROGRESS */
+.progress-bar { margin-top: 10px; height: 4px; background: #2a2a44; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #c8b8ff, #8a6fff); border-radius: 4px; transition: width 0.4s; }
+
+/* CHIPS */
+.chip-grid { display: grid; gap: 10px; margin-bottom: 8px; }
+.chip-grid-2 { grid-template-columns: 1fr 1fr; }
+.chip-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.chip { background: #16152a !important; border: 1px solid #2a2a44; border-radius: 14px; padding: 14px 10px; color: #aaa8cc; font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; text-align: center; }
+.chip:active { background: #2a1f4a !important; border-color: #c8b8ff; color: #e0d8ff; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px; }
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-btn { background: #16152a !important; color: #8888aa; border: 1px solid #2a2a44; border-radius: 20px; padding: 6px 14px; font-size: 12px; white-space: nowrap; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+.filter-btn.active { background: #c8b8ff !important; color: #0a0a0f; }
+
+/* SUB TASKS */
+.sub-card { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; border: 1px solid #2a2a44; background: #16152a !important; transition: all 0.2s; }
+.sub-card.inprogress { background: #0f1f2a !important; border-color: #2a4a5a; }
+.sub-card.done { background: #0f2a1a !important; border-color: #2a5a3a; }
+.sub-card.practice { background: #1a1330 !important; border-color: #3a2a5a; }
+.sub-circle { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; background: #2a2a44; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; }
+.sub-circle.inprogress { background: #4a8aaa; }
+.sub-circle.done { background: #4aaa6a; }
+.sub-circle.practice { background: #7a5fc8; font-size:13px; }
+.sub-name { font-size: 13px; color: #e0d8ff; }
+.sub-name.done { text-decoration: line-through; color: #6a9a7a; }
+.sub-hint { font-size: 10px; color: #8888aa; margin-top: 2px; }
+.sub-stats { font-size: 10px; color: #b8a8ee; margin-top: 3px; letter-spacing: 0.3px; }
+.sub-actions { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.sub-action-btn { background: none; border: none; color: #8888aa; font-size: 14px; cursor: pointer; padding: 2px 4px; }
+
+/* TYPE TAG on sub */
+.type-tag { display:inline-block; font-size:9px; letter-spacing:0.5px; text-transform:uppercase; border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
+.type-tag.practice { background:#2a1f4a; border:1px solid #7a5fc844; color:#b8a8ee; }
+.type-tag.goal { background:#1a2040; border:1px solid #4a8aaa44; color:#8ab8dd; }
+
+/* MILESTONE BADGE */
+.milestone-badge { display: inline-block; background: linear-gradient(135deg, #2a1f4a, #1a2040); border: 1px solid #c8b8ff44; border-radius: 8px; padding: 2px 8px; font-size: 10px; color: #c8b8ff; margin-left: 6px; }
+
+/* INSPIRATION */
+.inspiration-box { background: linear-gradient(135deg, #1a1535, #0f1a2a) !important; border: 1px solid #c8b8ff44; border-radius: 14px; padding: 16px 18px; margin-bottom: 20px; }
+.inspiration-label { font-size: 11px; color: #c8b8ff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.inspiration-quote { color: #d8d0ff; font-size: 13px; line-height: 1.8; font-style: italic; }
+.new-quote-btn { background: none; border: none; color: #8888aa; font-size: 11px; cursor: pointer; margin-top: 8px; padding: 0; font-family: inherit; }
+
+/* HOME QUOTE HERO */
+.home-quote { background: linear-gradient(135deg, #1a1535, #10182a) !important; border: 1px solid #c8b8ff33; border-radius: 16px; padding: 18px 20px; margin: 0 0 22px; text-align: center; }
+.home-quote-text { color: #d8d0ff; font-size: 15px; line-height: 1.7; font-style: italic; }
+.home-quote-refresh { background: none; border: none; color: #8888aa; font-size: 11px; cursor: pointer; margin-top: 10px; padding: 0; font-family: inherit; letter-spacing: 1px; }
+
+/* TIMER */
+.timer-box { background: linear-gradient(135deg, #1a1535, #0f1520) !important; border: 1px solid #c8b8ff44; border-radius: 14px; padding: 16px 20px; margin-bottom: 18px; text-align: center; }
+.timer-label { font-size: 11px; color: #c8b8ff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.timer-display { font-size: 42px; font-family: 'Courier New', monospace; color: #e0d8ff; letter-spacing: 4px; margin-bottom: 14px; }
+.timer-display.running { color: #c8b8ff; }
+.timer-btns { display: flex; gap: 10px; justify-content: center; }
+.timer-btn { border-radius: 10px; padding: 10px 20px; font-size: 13px; font-family: inherit; cursor: pointer; }
+.timer-btn.start { background: #0f2a1a !important; border: 1px solid #4aaa6a66; color: #4aaa6a; }
+.timer-btn.pause { background: #2a220f !important; border: 1px solid #d4aa4a66; color: #d4aa4a; }
+.timer-btn.reset { background: #2a0f0f !important; border: 1px solid #aa4a4a66; color: #aa4a4a; }
+
+/* BUTTONS */
+.ghost-btn { background: none !important; border: 1px solid #c8b8ff44; border-radius: 10px; color: #8888aa; padding: 10px 24px; font-size: 13px; font-family: inherit; cursor: pointer; }
+.ghost-btn.accent { color: #c8b8ff; border-color: #c8b8ff44; }
+.ghost-btn.full { width: 100%; margin-top: 12px; display: block; text-align: center; }
+.primary-btn { background: linear-gradient(135deg, #2a1f4a, #1a2040) !important; border: 1px solid #c8b8ff; border-radius: 12px; color: #c8b8ff; padding: 14px; font-size: 15px; font-family: inherit; cursor: pointer; width: 100%; }
+.danger-btn { background: #2a0f0f !important; border: 1px solid #aa4a4a66; border-radius: 10px; color: #aa4a4a; padding: 8px 16px; font-size: 12px; font-family: inherit; cursor: pointer; }
+
+/* DOTS */
+.dots { display: flex; justify-content: center; gap: 8px; margin-top: 28px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #2a2a44; transition: background 0.3s; }
+.dot.active { background: #c8b8ff; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+.modal-overlay.hidden { display: none; }
+.modal { background: #12121f !important; border: 1px solid #2a2a44; border-radius: 20px 20px 0 0; padding: 24px 20px 50px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-close { background: none !important; border: none; color: #8888aa; font-size: 20px; cursor: pointer; }
+
+/* FORMS */
+.field-label { font-size: 11px; color: #c8b8ff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; display: block; }
+.field-input { width: 100%; background: #0a0a0f !important; border: 1px solid #2a2a44; border-radius: 10px; padding: 12px 14px; color: #e0d8ff; font-size: 14px; font-family: inherit; outline: none; margin-bottom: 16px; }
+.field-input:focus { border-color: #c8b8ff; }
+.emoji-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.emoji-opt { font-size: 20px; background: #16152a !important; border: 1px solid #2a2a44; border-radius: 8px; padding: 6px 8px; cursor: pointer; }
+.emoji-opt.selected { background: #2a1f4a !important; border-color: #c8b8ff; }
+.tag-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.tag-opt { background: #16152a !important; color: #8888aa; border: 1px solid #2a2a44; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.tag-opt.selected { background: #c8b8ff !important; color: #0a0a0f; }
+.tag-opt.add { border-style: dashed; color: #c8b8ff; }
+.energy-picker { display: flex; gap: 8px; margin-bottom: 16px; }
+.energy-opt { flex: 1; background: #16152a !important; color: #8888aa; border: 1px solid #2a2a44; border-radius: 10px; padding: 10px 0; font-size: 12px; cursor: pointer; font-family: inherit; text-align: center; text-transform: capitalize; }
+.energy-opt.selected { background: #c8b8ff !important; color: #0a0a0f; }
+
+/* ADD SUB */
+.add-sub-box { background: #16152a !important; border: 1px solid #c8b8ff44; border-radius: 12px; padding: 14px; margin-top: 10px; }
+.add-sub-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-sub-btn { border-radius: 10px; padding: 10px 16px; font-size: 13px; font-family: inherit; cursor: pointer; }
+.add-sub-btn.confirm { background: #1a1030 !important; border: 1px solid #c8b8ff66; color: #c8b8ff; }
+.add-sub-btn.cancel { background: #1a1a2a !important; border: 1px solid #8888aa66; color: #8888aa; }
+.type-picker { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.type-opt { flex:1 1 calc(50% - 3px); background:#0a0a0f !important; border:1px solid #2a2a44; border-radius:10px; padding:8px 4px; font-size:11px; color:#8888aa; font-family:inherit; cursor:pointer; text-align:center; }
+.type-opt.selected { background:#2a1f4a !important; border-color:#c8b8ff; color:#e0d8ff; }
+
+/* PICKER MODAL */
+.picker-img { width:100%; border-radius:14px; display:block; margin-bottom:14px; background:#000; }
+.picker-subject { font-size:11px; color:#c8b8ff; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+.picker-btn-row { display:flex; gap:10px; margin-bottom:14px; }
+.picker-btn { flex:1; border-radius:12px; padding:13px; font-size:14px; font-family:inherit; cursor:pointer; }
+.picker-btn.roll { background:#2a1f4a !important; border:1px solid #c8b8ff66; color:#c8b8ff; }
+.picker-btn.log { background:#0f2a1a !important; border:1px solid #4aaa6a66; color:#8ad8a0; }
+.picker-thumbs { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+.picker-thumb { position:relative; width:56px; height:56px; border-radius:8px; overflow:hidden; border:1px solid #2a2a44; }
+.picker-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.picker-thumb .del { position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.7); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:11px; line-height:1; cursor:pointer; }
+.picker-empty { color:#8888aa; text-align:center; padding:20px 0; font-size:13px; }
+.picker-toast { color:#8ad8a0; font-size:12px; text-align:center; margin-bottom:10px; min-height:16px; }
+
+/* DETAIL HEADER */
+.detail-header { text-align: center; margin-bottom: 16px; }
+.detail-emoji { font-size: 42px; }
+.detail-title { font-size: 22px; font-weight: 700; color: #c8b8ff; margin: 8px 0 4px; letter-spacing: 1px; cursor: pointer; }
+.detail-title:hover { opacity: 0.8; }
+.detail-meta { color: #8888aa; font-size: 12px; margin-bottom: 8px; }
+
+/* JOURNAL / TODAY */
+.mood-picker { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.mood-opt { font-size: 24px; padding: 8px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; background: none !important; transition: all 0.2s; }
+.mood-opt.selected { border-color: #c8b8ff; background: #2a1f4a !important; }
+.journal-entry { background: linear-gradient(135deg, #16152a, #1a1f30) !important; border: 1px solid #2a2a44; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+.journal-date { font-size: 11px; color: #c8b8ff; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.journal-mood-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.journal-text { font-size: 13px; color: #aaa8cc; line-height: 1.6; }
+.share-toggle { display:flex; align-items:center; gap:10px; background:#0a0a0f; border:1px solid #2a2a44; border-radius:10px; padding:12px 14px; margin-bottom:16px; cursor:pointer; }
+.share-switch { width:42px; height:24px; border-radius:14px; background:#2a2a44; position:relative; flex-shrink:0; transition:background .2s; }
+.share-switch.on { background:#7a5fc8; }
+.share-knob { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#e8e8f0; transition:left .2s; }
+.share-switch.on .share-knob { left:21px; }
+.share-label { font-size:13px; color:#e0d8ff; }
+.share-sub { font-size:11px; color:#8888aa; margin-top:2px; }
+
+/* STATS */
+.stat-card { background: linear-gradient(135deg, #16152a, #1a1f30) !important; border: 1px solid #2a2a44; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+.stat-number { font-size: 32px; font-weight: 700; color: #c8b8ff; }
+.stat-label { font-size: 11px; color: #8888aa; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+/* ACHIEVEMENT */
+.achievement-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2a1f4a, #1a2a1a) !important; border: 1px solid #c8b8ff; border-radius: 16px; padding: 16px 20px; z-index: 200; text-align: center; max-width: 300px; width: 90%; animation: slideDown 0.4s ease; }
+@keyframes slideDown { from { top: -100px; opacity: 0; } to { top: 20px; opacity: 1; } }
+.achievement-icon { font-size: 36px; margin-bottom: 8px; }
+.achievement-title { font-size: 14px; font-weight: 700; color: #c8b8ff; margin-bottom: 4px; }
+.achievement-desc { font-size: 12px; color: #8888aa; }
+
+/* SMART SUGGEST */
+.smart-card { background: linear-gradient(135deg, #1a1535, #0f1a2a) !important; border: 1px solid #c8b8ff44; border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
+.smart-emoji { font-size: 48px; margin-bottom: 12px; }
+.smart-name { font-size: 20px; font-weight: 700; color: #c8b8ff; margin-bottom: 6px; }
+.smart-reason { font-size: 13px; color: #8888aa; line-height: 1.6; font-style: italic; }
+
+/* UNSEEN */
+.unseen-badge { background: #aa4a4a22; border: 1px solid #aa4a4a44; color: #aa4a4a; border-radius: 8px; padding: 2px 8px; font-size: 10px; margin-left: 6px; }
+
+/* INLINE EDIT */
+.inline-edit { background: #0a0a0f !important; border: 1px solid #c8b8ff; border-radius: 8px; padding: 4px 10px; color: #e0d8ff; font-size: 14px; font-family: inherit; outline: none; width: 100%; }
+
+/* ── WALL ─────────────────────────────────────────────── */
+.wall-mode-banner { background:#1a1330; border:1px solid #7a5fc844; border-radius:10px; padding:8px 12px; font-size:11px; color:#b8a8ee; text-align:center; margin-bottom:16px; letter-spacing:0.5px; }
+.wall-post { background: linear-gradient(135deg, #16152a, #1a1f30) !important; border:1px solid #2a2a44; border-radius:16px; padding:16px 18px; margin-bottom:14px; }
+.wall-post-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.wall-avatar { width:36px; height:36px; border-radius:50%; background:#2a1f4a; border:1px solid #c8b8ff44; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.wall-who { font-size:13px; font-weight:700; color:#e0d8ff; }
+.wall-when { font-size:10px; color:#8888aa; margin-top:1px; letter-spacing:0.5px; }
+.wall-photo { width:100%; border-radius:12px; margin:4px 0 10px; display:block; }
+.wall-caption { font-size:13px; color:#d8d0ff; line-height:1.6; }
+.wall-mood { font-size:20px; margin-right:6px; }
+.wall-acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.wall-act-chip { background:#0f2a1a; border:1px solid #2a5a3a; color:#8ad8a0; border-radius:20px; padding:3px 10px; font-size:11px; }
+.wall-react-row { display:flex; gap:8px; margin-top:12px; }
+.wall-react { background:#0a0a0f; border:1px solid #2a2a44; border-radius:20px; padding:5px 12px; font-size:14px; cursor:pointer; color:#aaa8cc; }
+.wall-react.active { border-color:#c8b8ff; background:#2a1f4a; }
+.wall-react-count { font-size:11px; color:#8888aa; margin-left:4px; }
+.wall-post-btns { display:flex; gap:10px; margin-bottom:18px; }
+.wall-photo-btn { flex:1; background: linear-gradient(135deg, #2a1f4a, #1a2a4a) !important; border:1px solid #c8b8ff66; border-radius:14px; color:#e0d8ff; padding:14px; font-size:14px; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+.wall-video { width:100%; border-radius:12px; margin:4px 0 10px; display:block; background:#000; }
+.wall-empty { color:#8888aa; text-align:center; padding:30px 0; font-size:13px; }
+.wall-comments { margin-top:12px; border-top:1px solid #2a2a44; padding-top:10px; }
+.wall-comment { display:flex; gap:8px; margin-bottom:8px; align-items:flex-start; }
+.wall-comment .c-av { font-size:15px; flex-shrink:0; }
+.wall-comment .c-body { font-size:12px; color:#d8d0ff; line-height:1.5; }
+.wall-comment .c-who { color:#b8a8ee; font-weight:700; margin-right:5px; }
+.wall-comment .c-when { color:#7a7a99; font-size:10px; margin-left:5px; }
+.wall-cmt-row { display:flex; gap:8px; margin-top:8px; }
+.wall-cmt-input { flex:1; background:#0a0a0f; border:1px solid #2a2a44; border-radius:20px; padding:8px 14px; color:#e0d8ff; font-size:12px; font-family:inherit; outline:none; }
+.wall-cmt-input:focus { border-color:#c8b8ff; }
+.wall-cmt-send { background:#2a1f4a; border:1px solid #c8b8ff66; border-radius:20px; color:#c8b8ff; padding:8px 14px; font-size:12px; font-family:inherit; cursor:pointer; }
+.profile-setup { background: linear-gradient(135deg, #16152a, #1a1f30); border:1px solid #2a2a44; border-radius:16px; padding:20px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <div id="view-home" class="view active">
+    <div class="center" style="margin-bottom:22px;padding-top:8px">
+      <div style="font-size:40px;margin-bottom:10px">✨</div>
+      <h1>What Should I Do?</h1>
+      <p class="subtitle">Your Personal Activity Guide</p>
+    </div>
+    <div class="home-quote">
+      <div id="home-quote-text" class="home-quote-text"></div>
+      <button class="home-quote-refresh" onclick="rotateHomeQuote()">↻ Another</button>
+    </div>
+    <button class="big-btn" onclick="showView('suggest')">
+      <span class="b-emoji">🎯</span>
+      <div><span class="b-label">Help me pick something</span><span class="b-sub">Answer 3 quick questions</span></div>
+    </button>
+    <button class="big-btn" onclick="showSmartSuggest()">
+      <span class="b-emoji">🧠</span>
+      <div><span class="b-label">Smart Suggest</span><span class="b-sub">Based on your mood history</span></div>
+    </button>
+    <button class="big-btn" onclick="showView('tracker')">
+      <span class="b-emoji">📋</span>
+      <div><span class="b-label">Master List</span><span class="b-sub">All activities + progress</span></div>
+    </button>
+    <button class="big-btn" onclick="showView('today')">
+      <span class="b-emoji">📅</span>
+      <div><span class="b-label">Today</span><span class="b-sub">Log what you did + journal</span></div>
+    </button>
+    <button class="big-btn" onclick="showView('wall')">
+      <span class="b-emoji">💜</span>
+      <div><span class="b-label">Us</span><span class="b-sub">Izzie & Claw</span></div>
+    </button>
+    <button class="big-btn" onclick="showView('insights')">
+      <span class="b-emoji">📊</span>
+      <div><span class="b-label">Insights</span><span class="b-sub">Mood & energy trends</span></div>
+    </button>
+    <button class="big-btn" onclick="openAddModal()">
+      <span class="b-emoji">➕</span>
+      <div><span class="b-label">Add New Activity</span><span class="b-sub">Build your own</span></div>
+    </button>
+  </div>
+
+  <!-- SUGGEST -->
+  <div id="view-suggest" class="view">
+    <button class="back-btn" onclick="showView('home')">← Back</button>
+    <div class="center" style="margin-bottom:24px"><h2 id="suggest-title">⏱️ How much time?</h2></div>
+    <div id="suggest-content"></div>
+    <div id="suggest-dots" class="dots">
+      <div class="dot active" id="dot-1"></div>
+      <div class="dot" id="dot-2"></div>
+      <div class="dot" id="dot-3"></div>
+    </div>
+  </div>
+
+  <!-- SMART SUGGEST -->
+  <div id="view-smart" class="view">
+    <button class="back-btn" onclick="showView('home')">← Back</button>
+    <div class="center" style="margin-bottom:20px"><h2>🧠 Smart Suggest</h2><p class="subtitle">Based on your history</p></div>
+    <div id="smart-content"></div>
+  </div>
+
+  <!-- TRACKER -->
+  <div id="view-tracker" class="view">
+    <button class="back-btn" onclick="showView('home')">← Back</button>
+    <h2 style="text-align:center;margin-bottom:16px">📋 Master List</h2>
+    <div id="filter-bar" class="filter-bar"></div>
+    <div id="unseen-section"></div>
+    <div id="tracker-list"></div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="ghost-btn accent" onclick="openAddModal()">➕ Add New Activity</button>
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="view-detail" class="view">
+    <button class="back-btn" id="detail-back">← Back</button>
+    <div class="detail-header">
+      <div id="detail-emoji" class="detail-emoji" onclick="editActivityEmoji()"></div>
+      <div id="detail-title" class="detail-title" onclick="editActivityTitle()"></div>
+      <div id="detail-meta" class="detail-meta"></div>
+      <div class="progress-bar"><div id="detail-progress" class="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="timer-box">
+      <div class="timer-label">⏱️ Session Timer</div>
+      <div id="timer-display" class="timer-display">00:00</div>
+      <div class="timer-btns">
+        <button id="timer-start-pause" class="timer-btn start" onclick="timerToggle()">▶ Start</button>
+        <button class="timer-btn reset" onclick="timerReset()">↺ Reset</button>
+      </div>
+    </div>
+    <div class="inspiration-box">
+      <div class="inspiration-label">✨ Inspiration</div>
+      <div id="inspiration-text" class="inspiration-quote"></div>
+      <button class="new-quote-btn" onclick="newQuote()">↻ New quote</button>
+    </div>
+    <div id="detail-tasks"></div>
+    <button class="ghost-btn full" id="add-task-btn" onclick="showAddSubInput()">➕ Add Task</button>
+    <div id="add-sub-box" class="add-sub-box" style="display:none">
+      <input id="new-sub-input" class="field-input" style="margin-bottom:0" placeholder="New task name..." onkeydown="if(event.key==='Enter')submitNewSub()">
+      <div class="type-picker" id="new-sub-type">
+        <button class="type-opt selected" data-t="oneoff" onclick="pickNewSubType('oneoff')">✓ Once</button>
+        <button class="type-opt" data-t="practice" onclick="pickNewSubType('practice')">🔁 Practice</button>
+        <button class="type-opt" data-t="goal" onclick="pickNewSubType('goal')">🎯 Goal ×N</button>
+        <button class="type-opt" data-t="picker" onclick="pickNewSubType('picker')">🎲 Photo picker</button>
+      </div>
+      <input id="new-sub-target" class="field-input" type="number" min="1" value="10" style="display:none;margin:10px 0 0" placeholder="How many times?">
+      <div class="add-sub-row">
+        <button class="add-sub-btn confirm" onclick="submitNewSub()">Add</button>
+        <button class="add-sub-btn cancel" onclick="hideAddSubInput()">Cancel</button>
+      </div>
+    </div>
+    <div style="margin-top:20px;text-align:center">
+      <button class="danger-btn" onclick="deleteCurrentActivity()">🗑 Delete Activity</button>
+    </div>
+  </div>
+
+  <!-- TODAY -->
+  <div id="view-today" class="view">
+    <button class="back-btn" onclick="showView('home')">← Back</button>
+    <h2 style="text-align:center;margin-bottom:6px">📅 Today</h2>
+    <p class="subtitle" style="text-align:center;margin-bottom:20px" id="today-date"></p>
+
+    <div style="background:linear-gradient(135deg,#16152a,#1a1f30);border:1px solid #2a2a44;border-radius:16px;padding:18px;margin-bottom:16px">
+      <div class="field-label">How are you feeling? 😊</div>
+      <div class="mood-picker" id="mood-picker">
+        <button class="mood-opt" data-mood="5" onclick="selectMood(5)">😄</button>
+        <button class="mood-opt" data-mood="4" onclick="selectMood(4)">🙂</button>
+        <button class="mood-opt" data-mood="3" onclick="selectMood(3)">😐</button>
+        <button class="mood-opt" data-mood="2" onclick="selectMood(2)">😔</button>
+        <button class="mood-opt" data-mood="1" onclick="selectMood(1)">😞</button>
+      </div>
+
+      <div class="field-label">Energy Level ⚡</div>
+      <div class="energy-picker" id="today-energy-picker">
+        <button class="energy-opt" onclick="selectTodayEnergy('low')">Low</button>
+        <button class="energy-opt" onclick="selectTodayEnergy('medium')">Medium</button>
+        <button class="energy-opt" onclick="selectTodayEnergy('high')">High</button>
+      </div>
+
+      <div class="field-label">What are you grateful for? 🙏</div>
+      <textarea id="grateful-input" class="field-input" rows="3" placeholder="3 things you're grateful for today..."></textarea>
+
+      <div class="field-label">Journal 📝</div>
+      <textarea id="journal-input" class="field-input" rows="4" placeholder="How was your day? What's on your mind?"></textarea>
+
+      <div class="field-label">What did you do today? ✅</div>
+      <div id="today-activities-list"></div>
+
+      <div class="share-toggle" id="share-toggle" onclick="toggleShare()" style="margin-top:16px">
+        <div class="share-switch" id="share-switch"><div class="share-knob"></div></div>
+        <div>
+          <div class="share-label">Share this entry with Us 💜</div>
+          <div class="share-sub">Off = stays private on your device</div>
+        </div>
+      </div>
+
+      <button class="primary-btn" style="margin-top:4px" onclick="saveTodayEntry()">Save Today's Entry</button>
+    </div>
+
+    <div id="past-entries"></div>
+  </div>
+
+  <!-- WALL -->
+  <div id="view-wall" class="view">
+    <button class="back-btn" onclick="showView('home')">← Back</button>
+    <h2 style="text-align:center;margin-bottom:2px">💜 Us</h2>
+    <p class="subtitle" style="text-align:center;margin-bottom:16px">Izzie & Claw</p>
+    <div id="wall-content"></div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div id="view-insights" class="view">
+    <button class="back-btn" onclick="showView('home')">← Back</button>
+    <h2 style="text-align:center;margin-bottom:20px">📊 Insights</h2>
+    <div id="insights-content"></div>
+  </div>
+
+</div>
+
+<!-- ADD ACTIVITY MODAL -->
+<div id="add-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>➕ New Activity</h3>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <label class="field-label">Activity Name</label>
+    <input id="new-act-name" class="field-input" placeholder="e.g. Music Production">
+    <label class="field-label">Emoji</label>
+    <div class="emoji-picker" id="emoji-picker"></div>
+    <label class="field-label">Category Tags</label>
+    <div class="tag-picker" id="tag-picker"></div>
+    <label class="field-label">Min Time Needed</label>
+    <select id="new-act-time" class="field-input">
+      <option value="10">10 min</option><option value="15">15 min</option>
+      <option value="20" selected>20 min</option><option value="30">30 min</option>
+      <option value="45">45 min</option><option value="60">60 min</option><option value="90">90 min</option>
+    </select>
+    <label class="field-label">Energy Level Needed</label>
+    <div class="energy-picker" id="energy-picker"></div>
+    <label class="field-label">Sub-tasks (one per line)</label>
+    <textarea id="new-act-subs" class="field-input" rows="5" placeholder="Learn chord progression&#10;Record rough demo&#10;Finish mix"></textarea>
+    <button class="primary-btn" onclick="saveNewActivity()">Save Activity</button>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT POPUP -->
+<div id="achievement-popup" style="display:none" class="achievement-popup">
+  <div class="achievement-icon" id="ach-icon">🏆</div>
+  <div class="achievement-title" id="ach-title">Achievement Unlocked!</div>
+  <div class="achievement-desc" id="ach-desc"></div>
+</div>
+
+<!-- hidden file inputs for photos + short videos -->
+<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="onPhotoPicked(event)">
+<input type="file" id="video-input" accept="video/*" style="display:none" onchange="onVideoPicked(event)">
+<input type="file" id="picker-photo-input" accept="image/*" multiple style="display:none" onchange="onPickerPhotos(event)">
+
+<!-- PICKER MODAL -->
+<div id="picker-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🎲 <span id="picker-title">Picker</span></h3>
+      <button class="modal-close" onclick="closePicker()">✕</button>
+    </div>
+    <div id="picker-body"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav-bar">
+  <button class="nav-item active" id="nav-home" onclick="showView('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+  <button class="nav-item" id="nav-tracker" onclick="showView('tracker')"><span class="nav-icon">📋</span><span class="nav-label">List</span></button>
+  <button class="nav-item" id="nav-today" onclick="showView('today')"><span class="nav-icon">📅</span><span class="nav-label">Today</span></button>
+  <button class="nav-item" id="nav-wall" onclick="showView('wall')"><span class="nav-icon">💜</span><span class="nav-label">Us</span></button>
+  <button class="nav-item" id="nav-insights" onclick="showView('insights')"><span class="nav-icon">📊</span><span class="nav-label">Insights</span></button>
+</nav>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   FIREBASE CONFIG — leave blank to run in local preview mode.
+   Paste your izzies-apps config here in the second pass to go live.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  // apiKey: "...",
+  // authDomain: "...",
+  // databaseURL: "...",
+  // projectId: "izzies-apps",
+  // storageBucket: "...",
+  // appId: "..."
+};
+function firebaseReady(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey); }
+
+/* ── CATEGORIES (broad) + their quote pools ─────────────────────────────────
+   Each activity tag maps to a category here. New activities pick from these,
+   so quotes always populate. Custom tags fall back to GOAL_QUOTES.            */
+const CATEGORIES = {
+  music: { label:"Music", emoji:"🎵", quotes:[
+    "\"Music is the shorthand of emotion.\" — Tolstoy",
+    "\"To play a wrong note is insignificant; to play without passion is inexcusable.\" — Beethoven",
+    "\"The only truth is music.\" — Jack Kerouac",
+    "\"Without music, life would be a mistake.\" — Nietzsche",
+    "\"Where words fail, music speaks.\" — Hans Christian Andersen",
+    "\"You are the music while the music lasts.\" — T.S. Eliot",
+  ]},
+  creative: { label:"Creative Work", emoji:"🎨", quotes:[
+    "\"Creativity is intelligence having fun.\" — Einstein",
+    "\"Start before you're ready.\" — Steven Pressfield",
+    "\"You can't use up creativity. The more you use, the more you have.\" — Maya Angelou",
+    "\"Everything you can imagine is real.\" — Picasso",
+    "\"The desire to create is one of the deepest yearnings of the soul.\" — Dieter Uchtdorf",
+    "\"Inspiration exists, but it has to find you working.\" — Picasso",
+  ]},
+  focus: { label:"Focus & Learning", emoji:"🧠", quotes:[
+    "\"A year from now you'll wish you had started today.\"",
+    "\"The man who moves a mountain begins by carrying small stones.\" — Confucius",
+    "\"Don't watch the clock; do what it does. Keep going.\" — Sam Levenson",
+    "\"Success is the sum of small efforts, repeated.\"",
+    "\"Concentrate all your thoughts upon the work at hand.\" — Alexander Graham Bell",
+    "\"Live as if you were to die tomorrow. Learn as if you were to live forever.\" — Gandhi",
+  ]},
+  movement: { label:"Movement & Body", emoji:"💪", quotes:[
+    "\"Take care of your body. It's the only place you have to live.\" — Jim Rohn",
+    "\"The body achieves what the mind believes.\"",
+    "\"Every rep is a deposit into your future self.\"",
+    "\"Movement is medicine.\"",
+    "\"It never gets easier, you just get stronger.\"",
+    "\"Discipline is choosing between what you want now and what you want most.\"",
+  ]},
+  calm: { label:"Calm & Rest", emoji:"😌", quotes:[
+    "\"Almost everything will work again if you unplug it for a few minutes.\" — Anne Lamott",
+    "\"Rest is not idleness.\" — John Lubbock",
+    "\"Be still. The world will wait.\"",
+    "\"In the middle of every difficulty lies opportunity.\" — Einstein",
+    "\"Within you there is a stillness to which you can retreat at any time.\" — Hesse",
+    "\"Almost everything will work again if you slow down.\"",
+  ]},
+  home: { label:"Home & Space", emoji:"🏠", quotes:[
+    "\"A beautiful space is a form of self-respect.\"",
+    "\"Your home is a living vision of who you are becoming.\"",
+    "\"Make your space reflect your best self.\"",
+    "\"Every corner you love is a corner of peace you built.\"",
+    "\"Have nothing in your house that you do not know to be useful or believe to be beautiful.\" — William Morris",
+    "\"The ache for home lives in all of us.\" — Maya Angelou",
+  ]},
+  building: { label:"Building & Hustle", emoji:"🚀", quotes:[
+    "\"Freedom is built, not given.\"",
+    "\"Your future self is watching. Make them proud.\"",
+    "\"Build the life you keep dreaming about.\"",
+    "\"Work in silence. Let success make the noise.\"",
+    "\"The best way to predict the future is to create it.\" — Peter Drucker",
+    "\"Ideas are easy. Execution is everything.\" — John Doerr",
+  ]},
+};
+
+/* Home-page pool: why goals & hobbies matter */
+const GOAL_QUOTES = [
+  "\"A hobby a day keeps the doldrums away.\" — Phyllis McGinley",
+  "\"Goals are dreams with deadlines.\" — Diana Scharf",
+  "\"The purpose of life is a life of purpose.\" — Robert Byrne",
+  "\"Setting goals is the first step in turning the invisible into the visible.\" — Tony Robbins",
+  "\"Hobbies are the little corners of life we keep just for ourselves.\"",
+  "\"Do something today that your future self will thank you for.\"",
+  "\"The two most important days in your life are the day you are born and the day you find out why.\" — Mark Twain",
+  "\"You don't have to be great to start, but you have to start to be great.\" — Zig Ziglar",
+  "\"A goal without a plan is just a wish.\" — Antoine de Saint-Exupéry",
+  "\"The things you make time for are the things you become.\"",
+  "\"Fall in love with the process and the results will come.\" — Eric Thomas",
+  "\"Little by little, one travels far.\" — J.R.R. Tolkien",
+];
+
+function pickQuote(tags){
+  const cat = CATEGORIES[tags && tags[0]];
+  const pool = cat ? cat.quotes : GOAL_QUOTES;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+/* ── TAGS ─────────────────────────────────────────────────────────────────── */
+const BASE_TAGS = Object.keys(CATEGORIES);
+let customTags = [];
+function allTags(){ return [...BASE_TAGS, ...customTags]; }
+function tagEmoji(t){ return CATEGORIES[t] ? CATEGORIES[t].emoji : "🏷"; }
+function tagLabel(t){ return CATEGORIES[t] ? CATEGORIES[t].label.toLowerCase() : t; }
+
+const MOOD_MAP = {
+  "🎨 Creative":["creative","music"],
+  "😌 Calm":["calm","music"],
+  "🔥 Focused":["focus","building"],
+  "⚡ Physical":["movement","home"],
+};
+const STATUS_NEXT={todo:"inprogress",inprogress:"done",done:"todo"};
+const EMOJI_OPTIONS=["🎵","🥁","🎸","🎹","✍️","📝","📚","🎧","🏠","🧘","💪","💼","🚀","💻","🔨","🎨","🏋️","🎯","🌱","🍳","📷","🎭","✨"];
+
+const MILESTONES = {
+  "p4":  {icon:"🎹",title:"Two-Handed Pianist!",desc:"You played Song 1 with both hands!"},
+  "p14": {icon:"🎼",title:"First Full Song!",desc:"You played a full song start to finish!"},
+  "sw4": {icon:"🎵",title:"First Demo!",desc:"Song 1 demo is recorded!"},
+  "sw11":{icon:"🏆",title:"EP Complete!",desc:"You recorded your full EP demo!"},
+  "d5":  {icon:"🥁",title:"First Recording!",desc:"You recorded your first freestyle!"},
+  "g3":  {icon:"🎸",title:"Singer-Songwriter!",desc:"You played and sang at the same time!"},
+  "wr2": {icon:"📖",title:"Chapter 1 Done!",desc:"You wrote your first chapter!"},
+  "gym5":{icon:"💪",title:"Full Body Beast!",desc:"You crushed a full body circuit!"},
+  "et6": {icon:"🚀",title:"CRM Built!",desc:"GHL pipeline is complete!"},
+};
+
+function makeId(){return Math.random().toString(36).slice(2,9);}
+
+function isRecurring(s){ return s.type === "recurring"; }
+function isPractice(s){ return s.type === "recurring" && s.recurMode === "infinite"; }
+function isGoal(s){ return s.type === "recurring" && s.recurMode === "target"; }
+function isPicker(s){ return s.type === "picker"; }
+
+function P(id,name){ return {id,name,st:"todo",type:"recurring",recurMode:"infinite",count:0,streak:0,lastStreakDate:null,lastDone:null}; }
+function T(id,name){ return {id,name,st:"todo"}; }
+
+const DEFAULT_ACTIVITIES = [
+  {id:"piano",name:"Piano",emoji:"🎹",tags:["music","focus"],minTime:15,energy:["low","medium"],lastDone:null,subs:[
+    T("p1","Pick 4 songs to learn"),T("p2","Song 1 – Right hand only"),
+    T("p3","Song 1 – Left hand only"),T("p4","Song 1 – Both hands"),
+    T("p5","Song 2 – Right hand only"),T("p6","Song 2 – Left hand only"),
+    T("p7","Song 2 – Both hands"),T("p8","Song 3 – Right hand only"),
+    T("p9","Song 3 – Left hand only"),T("p10","Song 3 – Both hands"),
+    T("p11","Song 4 – Right hand only"),T("p12","Song 4 – Left hand only"),
+    T("p13","Song 4 – Both hands"),T("p14","Play a full song start to finish"),
+  ]},
+  {id:"drums",name:"Drums",emoji:"🥁",tags:["music","movement"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
+    P("d1","Free play – match a song"),P("d2","Clone Hero session"),
+    P("d3","Pattern practice with click track"),T("d4","Learn a new genre pattern"),
+    T("d5","Record a freestyle and listen back"),P("d6","Play along to a full song"),
+  ]},
+  {id:"songwriting",name:"Song Writing",emoji:"🎵",tags:["music","creative"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
+    T("sw1","Song 1 – Write verse lyrics"),T("sw2","Song 1 – Write chorus"),
+    T("sw3","Song 1 – Chord/melody structure"),T("sw4","Song 1 – Full demo recorded"),
+    T("sw5","Song 2 – Brainstorm concept"),T("sw6","Song 2 – Full draft"),
+    T("sw7","Song 3 – Full draft"),T("sw8","Song 4 – Full draft"),
+    T("sw9","Song 5 – Full draft"),T("sw10","Review & refine all 5 songs"),
+    T("sw11","Record EP demo"),
+  ]},
+  {id:"guitar",name:"Guitar",emoji:"🎸",tags:["music","creative"],minTime:15,energy:["low","medium","high"],lastDone:null,subs:[
+    P("g1","Warmup – chord transitions"),T("g2","Learn a new song"),
+    T("g3","Play and sing at the same time"),P("g4","Fingerpicking practice"),
+    P("g5","Free jam for 10 min"),
+  ]},
+  {id:"writing",name:"Writing",emoji:"✍️",tags:["creative","focus"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
+    T("wr1","Outline book chapters"),T("wr2","Write Chapter 1 draft"),
+    T("wr3","Write Chapter 2 draft"),T("wr4","Edit a previous chapter"),
+    P("wr5","Free write 15 min – no editing"),
+  ]},
+  {id:"poetry",name:"Poetry",emoji:"📝",tags:["creative","calm"],minTime:10,energy:["low","medium"],lastDone:null,subs:[
+    P("po1","Write a poem about today"),T("po2","Use poem as journal entry"),
+    T("po3","Edit an old poem"),T("po4","Research publishing options"),
+    T("po5","Submit a poem somewhere"),
+  ]},
+  {id:"reading",name:"Reading",emoji:"📚",tags:["calm","focus"],minTime:15,energy:["low","medium"],lastDone:null,subs:[
+    P("r1","Read 20 pages"),T("r2","Find next book to read"),
+    P("r3","Highlight key ideas / take notes"),T("r4","Write a reflection"),
+  ]},
+  {id:"discover",name:"Discover Artist",emoji:"🎧",tags:["calm","music"],minTime:10,energy:["low"],lastDone:null,subs:[
+    T("da1","Listen to Gracie Abrams"),T("da2","Explore Taylor Swift deep cuts"),
+    T("da3","Find Jensen's music"),T("da4","Explore Phoebe Bridgers"),
+    P("da5","Save 5 new songs to a playlist"),
+  ]},
+  {id:"interior",name:"Interior Design",emoji:"🏠",tags:["creative","home"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
+    T("id1","Rearrange one area"),P("id2","Pinterest / mood board session"),
+    T("id3","Buy one thing to improve the space"),T("id4","Deep clean + redesign a corner"),
+  ]},
+  {id:"stretch",name:"Stretching",emoji:"🧘",tags:["calm","movement"],minTime:10,energy:["low","medium"],lastDone:null,subs:[
+    P("st1","Morning 10-min stretch"),P("st2","Hip flexor + back focus"),
+    P("st3","Full body 20-min flow"),P("st4","Breathing + light meditation"),
+  ]},
+  {id:"gym",name:"Gym",emoji:"💪",tags:["movement"],minTime:45,energy:["high"],lastDone:null,subs:[
+    P("gym1","Upper body strength"),P("gym2","Lower body / legs"),
+    P("gym3","Cardio / stamina session"),P("gym4","Mobility and flexibility"),
+    P("gym5","Full body circuit"),
+  ]},
+  {id:"mikey",name:"Mikey Business",emoji:"💼",tags:["building","focus"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
+    P("mb1","Work on a revenue stream"),P("mb2","Client outreach / follow-up"),
+    T("mb3","Plan next steps"),T("mb4","Research for the biz"),
+  ]},
+  {id:"etlmd",name:"ETLMD",emoji:"🚀",tags:["building","focus"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
+    T("et1","GHL – Workflow D (Renewal)"),T("et2","GHL – Workflow A (New Lead)"),
+    T("et3","GHL – Workflow B (Booked)"),T("et4","GHL – Workflow C (Onboarding)"),
+    T("et5","GHL – Workflow E (Lapsed)"),T("et6","GHL – CRM Pipeline build"),
+    T("et7","Finance parents – research plan"),T("et8","Review progress and adjust"),
+  ]},
+  {id:"code",name:"Code for House",emoji:"💻",tags:["focus","creative"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
+    T("c1","Brainstorm home automation ideas"),T("c2","Build a small project or script"),
+    T("c3","Research smart home tools"),P("c4","Test and debug existing code"),
+  ]},
+  {id:"home",name:"Home Projects",emoji:"🔨",tags:["home","movement"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
+    T("h1","Window"),T("h2","Balcony Wash"),T("h3","Grass Issue"),
+    T("h4","TV Frame"),T("h5","Checker Paint – Kitchen Trim ⭐"),
+    T("h6","Checker Paint – Office Trim ⭐"),T("h7","Checker Paint – Closet Trim ⭐"),
+    T("h8","Basketball Rim"),T("h9","LED Lights Under Bench"),
+    T("h10","Bench Cushions"),T("h11","Bench Trim"),
+    T("h12","Over Bench Art ⭐"),T("h13","Over Couch Art ⭐"),
+    T("h14","Cut Piano Labels"),T("h15","Rope on Globe Lamp"),
+    T("h16","Wire Management – Living Room"),T("h17","Wire Management – Bedroom"),
+    T("h18","12 Paintings for Bookshelf ⭐"),T("h19","Re-wrap Doors"),
+    T("h20","Stain Shelves"),T("h21","Stain Closet Door"),
+  ]},
+];
+
+/* ── STATE ─────────────────────────────────────────────────────────────────── */
+let activities = [];
+let hasSavedActivities = false;
+let journalEntries = [];
+let unlockedAchievements = [];
+let profile = null;
+let wallPosts = [];
+let currentView = "home";
+let previousView = "home";
+let suggestStep = 1;
+let selectedTime = null;
+let selectedMood = null;
+let currentDetailId = null;
+let currentFilter = "all";
+let selectedEmoji = "✨";
+let selectedTags = [];
+let selectedEnergy = [];
+let todayMood = null;
+let todayEnergy = null;
+let todayShare = false;
+let newSubType = "oneoff";
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let todayCheckedActivities = [];
+
+/* ── STORAGE ───────────────────────────────────────────────────────────────── */
+function saveData() {
+  try {
+    localStorage.setItem("wsid_activities", JSON.stringify(activities));
+    localStorage.setItem("wsid_journal", JSON.stringify(journalEntries));
+    localStorage.setItem("wsid_achievements", JSON.stringify(unlockedAchievements));
+    localStorage.setItem("wsid_customtags", JSON.stringify(customTags));
+    if (profile) localStorage.setItem("wsid_profile", JSON.stringify(profile));
+    localStorage.setItem("wsid_wall", JSON.stringify(wallPosts));
+  } catch(e) {}
+}
+function loadData() {
+  try {
+    const a = localStorage.getItem("wsid_activities");
+    const j = localStorage.getItem("wsid_journal");
+    const ach = localStorage.getItem("wsid_achievements");
+    const ct = localStorage.getItem("wsid_customtags");
+    const pr = localStorage.getItem("wsid_profile");
+    const w = localStorage.getItem("wsid_wall");
+    if (a) {
+      activities = JSON.parse(a).map(migrateActivity);
+      hasSavedActivities = true;
+    }
+    if (j) journalEntries = JSON.parse(j);
+    if (ach) unlockedAchievements = JSON.parse(ach);
+    if (ct) customTags = JSON.parse(ct);
+    if (pr) profile = JSON.parse(pr);
+    if (w) wallPosts = JSON.parse(w);
+  } catch(e) {}
+}
+
+/* ── TIMER ─────────────────────────────────────────────────────────────────── */
+function timerToggle() {
+  if (timerRunning) {
+    clearInterval(timerInterval); timerRunning = false;
+    document.getElementById("timer-start-pause").className = "timer-btn start";
+    document.getElementById("timer-start-pause").textContent = "▶ Start";
+    document.getElementById("timer-display").classList.remove("running");
+  } else {
+    timerInterval = setInterval(() => { timerSeconds++; updateTimerDisplay(); }, 1000);
+    timerRunning = true;
+    document.getElementById("timer-start-pause").className = "timer-btn pause";
+    document.getElementById("timer-start-pause").textContent = "⏸ Pause";
+    document.getElementById("timer-display").classList.add("running");
+  }
+}
+function timerReset() {
+  clearInterval(timerInterval); timerRunning = false; timerSeconds = 0;
+  updateTimerDisplay();
+  const btn = document.getElementById("timer-start-pause");
+  if (btn) { btn.className = "timer-btn start"; btn.textContent = "▶ Start"; }
+  const disp = document.getElementById("timer-display");
+  if (disp) disp.classList.remove("running");
+}
+function updateTimerDisplay() {
+  const h=Math.floor(timerSeconds/3600),m=Math.floor((timerSeconds%3600)/60),s=timerSeconds%60;
+  const txt = h>0?`${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  const el = document.getElementById("timer-display");
+  if (el) el.textContent = txt;
+}
+
+/* ── NAVIGATION ────────────────────────────────────────────────────────────── */
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + name).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  const navEl = document.getElementById("nav-" + name);
+  if (navEl) navEl.classList.add("active");
+  currentView = name;
+  if (name === "home") rotateHomeQuote();
+  if (name === "tracker") renderTracker();
+  if (name === "suggest") { suggestStep = 1; renderSuggest(); }
+  if (name === "today") renderToday();
+  if (name === "wall") renderWall();
+  if (name === "insights") renderInsights();
+  window.scrollTo(0, 0);
+}
+function openDetail(id, fromView) {
+  previousView = fromView || currentView;
+  currentDetailId = id;
+  timerReset();
+  renderDetail();
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-detail").classList.add("active");
+  document.getElementById("detail-back").onclick = () => { timerReset(); showView(previousView); };
+  window.scrollTo(0, 0);
+}
+
+/* ── HELPERS ───────────────────────────────────────────────────────────────── */
+function getProgress(act) {
+  const counting = act.subs.filter(s => !isPractice(s) && !isPicker(s));
+  const total = counting.length;
+  const done = counting.filter(s => s.st === "done").length;
+  return { done, total, pct: total ? Math.round(done/total*100) : 0 };
+}
+function newQuote() {
+  const act = activities.find(a => a.id === currentDetailId);
+  if (act) document.getElementById("inspiration-text").textContent = pickQuote(act.tags);
+}
+function todayDateStr(){ return new Date().toISOString().split("T")[0]; }
+function yesterdayStr(){ const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().split("T")[0]; }
+function friendlyDate(str){ const d=new Date(str+"T12:00:00"); return d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}); }
+function daysSince(dateStr){ if(!dateStr) return 999; return Math.floor((Date.now()-new Date(dateStr+"T12:00:00").getTime())/86400000); }
+function timeAgo(ts){
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60) return "just now";
+  const m=Math.floor(s/60); if(m<60) return m+"m ago";
+  const h=Math.floor(m/60); if(h<24) return h+"h ago";
+  const d=Math.floor(h/24); if(d<7) return d+"d ago";
+  return friendlyDate(new Date(ts).toISOString().split("T")[0]);
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ── HOME QUOTE ────────────────────────────────────────────────────────────── */
+function rotateHomeQuote(){
+  const el = document.getElementById("home-quote-text");
+  if (el) el.textContent = GOAL_QUOTES[Math.floor(Math.random()*GOAL_QUOTES.length)];
+}
+
+/* ── ACHIEVEMENTS ──────────────────────────────────────────────────────────── */
+function checkAchievement(subId) {
+  if (MILESTONES[subId] && !unlockedAchievements.includes(subId)) {
+    unlockedAchievements.push(subId);
+    saveData();
+    showAchievement(MILESTONES[subId]);
+  }
+}
+function showAchievement(m) {
+  const popup = document.getElementById("achievement-popup");
+  document.getElementById("ach-icon").textContent = m.icon;
+  document.getElementById("ach-title").textContent = m.title;
+  document.getElementById("ach-desc").textContent = m.desc;
+  popup.style.display = "block";
+  setTimeout(() => { popup.style.display = "none"; }, 4000);
+}
+
+/* ── EDIT ACTIVITY ─────────────────────────────────────────────────────────── */
+function editActivityTitle() {
+  const act = activities.find(a => a.id === currentDetailId);
+  if (!act) return;
+  const el = document.getElementById("detail-title");
+  el.innerHTML = `<input class="inline-edit" id="title-edit-input" value="${act.name}" onblur="saveActivityTitle()" onkeydown="if(event.key==='Enter')saveActivityTitle()">`;
+  document.getElementById("title-edit-input").focus();
+}
+function saveActivityTitle() {
+  const act = activities.find(a => a.id === currentDetailId);
+  if (!act) return;
+  const val = document.getElementById("title-edit-input").value.trim();
+  if (val) act.name = val;
+  saveData(); renderDetail();
+}
+function editActivityEmoji() {
+  const act = activities.find(a => a.id === currentDetailId);
+  if (!act) return;
+  const emojis = ["🎵","🥁","🎸","🎹","✍️","📝","📚","🎧","🏠","🧘","💪","💼","🚀","💻","🔨","🎨","🏋️","🎯","🌱","🍳","📷","🎭","✨","🎲","🏃","🧗","🛠"];
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">';
+  emojis.forEach(em => { html += `<button onclick="setActivityEmoji('${em}')" style="font-size:22px;background:#16152a;border:1px solid #2a2a44;border-radius:8px;padding:6px;cursor:pointer">${em}</button>`; });
+  html += '</div>';
+  document.getElementById("detail-emoji").innerHTML = html;
+}
+function setActivityEmoji(em) {
+  const act = activities.find(a => a.id === currentDetailId);
+  if (act) { act.emoji = em; saveData(); renderDetail(); }
+}
+function deleteCurrentActivity() {
+  if (!confirm("Delete this activity? This cannot be undone.")) return;
+  activities = activities.filter(a => a.id !== currentDetailId);
+  saveData(); showView(previousView);
+}
+
+/* ── SUB TASK EDIT/DELETE/CONVERT ──────────────────────────────────────────── */
+function editSubTask(actId, subId) {
+  const act = activities.find(a => a.id === actId);
+  const sub = act.subs.find(s => s.id === subId);
+  const newName = prompt("Edit task name:", sub.name);
+  if (newName && newName.trim()) { sub.name = newName.trim(); saveData(); renderDetail(); }
+}
+function deleteSubTask(actId, subId) {
+  const act = activities.find(a => a.id === actId);
+  act.subs = act.subs.filter(s => s.id !== subId);
+  saveData(); renderDetail();
+}
+function cycleSubType(actId, subId) {
+  const act = activities.find(a => a.id === actId);
+  const s = act.subs.find(x => x.id === subId);
+  if (!isRecurring(s)) {
+    s.type="recurring"; s.recurMode="infinite";
+    s.count=s.count||0; s.streak=s.streak||0; s.lastStreakDate=s.lastStreakDate||null; s.st="todo";
+  } else if (isPractice(s)) {
+    const n = parseInt(prompt("Goal: how many times?", s.target||10),10);
+    s.recurMode="target"; s.target = (n&&n>0)?n:10;
+  } else {
+    delete s.type; delete s.recurMode; delete s.target;
+    s.st = (s.count && s.target && s.count>=s.target) ? "done" : "todo";
+  }
+  saveData(); renderDetail();
+}
+
+/* ── SESSION LOGGING (recurring) ───────────────────────────────────────────── */
+function logSession(actId, subId){
+  const act = activities.find(a=>a.id===actId);
+  const s = act.subs.find(x=>x.id===subId);
+  const today = todayDateStr();
+  s.count = (s.count||0)+1;
+  if (s.lastStreakDate !== today){
+    s.streak = (s.lastStreakDate === yesterdayStr()) ? (s.streak||0)+1 : 1;
+    s.lastStreakDate = today;
+  }
+  s.lastDone = today;
+  act.lastDone = today;
+  if (isGoal(s) && s.count >= s.target) s.st = "done";
+  checkAchievement(subId);
+  saveData(); renderDetail();
+}
+
+/* ── SUGGEST ───────────────────────────────────────────────────────────────── */
+function renderSuggest() {
+  const titles = ["","⏱️ How much time?","🌊 What's your vibe?","⚡ Energy level?","Here's your match"];
+  document.getElementById("suggest-title").textContent = titles[suggestStep];
+  [1,2,3].forEach(i => { document.getElementById("dot-"+i).className = "dot"+(suggestStep>=i?" active":""); });
+  document.getElementById("suggest-dots").style.display = suggestStep<4?"flex":"none";
+  const content = document.getElementById("suggest-content");
+  content.innerHTML = "";
+  if (suggestStep===1) {
+    const g=document.createElement("div"); g.className="chip-grid chip-grid-2";
+    [{label:"10–20 min",value:20},{label:"20–45 min",value:45},{label:"45–90 min",value:90},{label:"90+ min",value:999}].forEach(opt=>{
+      const b=document.createElement("button"); b.className="chip"; b.textContent=opt.label;
+      b.onclick=()=>{selectedTime=opt.value;suggestStep=2;renderSuggest();};
+      g.appendChild(b);
+    }); content.appendChild(g);
+  } else if (suggestStep===2) {
+    const g=document.createElement("div"); g.className="chip-grid chip-grid-2";
+    Object.keys(MOOD_MAP).forEach(mood=>{
+      const b=document.createElement("button"); b.className="chip"; b.textContent=mood;
+      b.onclick=()=>{selectedMood=mood;suggestStep=3;renderSuggest();};
+      g.appendChild(b);
+    }); content.appendChild(g);
+  } else if (suggestStep===3) {
+    const g=document.createElement("div"); g.className="chip-grid chip-grid-3";
+    ["low","medium","high"].forEach(energy=>{
+      const b=document.createElement("button"); b.className="chip"; b.textContent=energy;
+      b.onclick=()=>{
+        const moodTags=MOOD_MAP[selectedMood]||[];
+        const results=activities.filter(a=>a.minTime<=selectedTime&&a.energy.includes(energy))
+          .map(a=>({...a,score:a.tags.filter(t=>moodTags.includes(t)).length}))
+          .sort((x,y)=>y.score-x.score).slice(0,4);
+        suggestStep=4; renderSuggestResults(results);
+      };
+      g.appendChild(b);
+    }); content.appendChild(g);
+  }
+}
+function renderSuggestResults(results) {
+  document.getElementById("suggest-title").textContent = "Here's your match";
+  document.getElementById("suggest-dots").style.display = "none";
+  const content = document.getElementById("suggest-content");
+  content.innerHTML = "";
+  if (results.length===0) {
+    content.innerHTML='<p style="color:#8888aa;text-align:center">No match — try different options!</p>';
+  } else {
+    results.forEach(act=>{ content.appendChild(makeActivityCard(act,getProgress(act),"suggest")); });
+  }
+  const btn=document.createElement("button"); btn.className="ghost-btn";
+  btn.textContent="↩ Try Again"; btn.style.display="block"; btn.style.margin="20px auto 0";
+  btn.onclick=()=>{suggestStep=1;renderSuggest();}; content.appendChild(btn);
+}
+
+/* ── SMART SUGGEST ─────────────────────────────────────────────────────────── */
+function showSmartSuggest() {
+  showView("smart");
+  const content = document.getElementById("smart-content");
+  content.innerHTML = "";
+  if (!activities.length) {
+    content.innerHTML = '<p style="color:#8888aa;text-align:center;padding:30px 0">Add a few activities first, then I can suggest one for you 💜</p>';
+    return;
+  }
+  const recent = journalEntries.slice(-7);
+  const avgMood = recent.length ? recent.reduce((s,e)=>s+(e.mood||3),0)/recent.length : 3;
+  const energyMap = {low:1,medium:2,high:3};
+  const avgEnergy = recent.length ? recent.reduce((s,e)=>s+(energyMap[e.energy]||2),0)/recent.length : 2;
+  const sorted = [...activities].sort((a,b) => daysSince(a.lastDone||null) - daysSince(b.lastDone||null)).reverse();
+
+  let pick = null, reason = "";
+  if (avgMood < 2.5) {
+    pick = activities.find(a=>a.tags.includes("calm")) || activities[0];
+    reason = "Your mood has been low lately. Something calm and gentle might help lift you.";
+  } else if (avgEnergy < 1.5) {
+    pick = activities.find(a=>a.energy.includes("low")) || activities[0];
+    reason = "Your energy has been low. Here's something you can do without burning out.";
+  } else if (avgMood >= 4 && avgEnergy >= 2.5) {
+    pick = activities.find(a=>a.tags.includes("building")||a.tags.includes("focus")) || activities[0];
+    reason = "You've been in great shape! This is the perfect time to push forward on something big.";
+  } else {
+    pick = sorted[0] || activities[0];
+    reason = "You haven't done this one in a while — time to revisit it!";
+  }
+  if (!pick) { content.innerHTML = '<p style="color:#8888aa;text-align:center">Log some journal entries first to get smart suggestions!</p>'; return; }
+
+  const prog = getProgress(pick);
+  const smartCard = document.createElement("div");
+  smartCard.className = "smart-card";
+  smartCard.innerHTML = `
+    <div class="smart-emoji">${pick.emoji}</div>
+    <div class="smart-name">${pick.name}</div>
+    <div class="smart-reason">${reason}</div>
+    <div style="margin-top:12px">
+      <div class="progress-bar"><div class="progress-fill" style="width:${prog.pct}%"></div></div>
+      <div style="font-size:11px;color:#8888aa;margin-top:6px">${prog.done}/${prog.total} tasks done</div>
+    </div>`;
+  smartCard.onclick = () => openDetail(pick.id, "smart");
+  content.appendChild(smartCard);
+
+  const unseen = sorted.slice(0,4).filter(a=>a.id!==pick.id);
+  if (unseen.length) {
+    const lbl = document.createElement("div");
+    lbl.className = "section-title"; lbl.style.marginTop="20px"; lbl.textContent = "🕰 Haven't done in a while";
+    content.appendChild(lbl);
+    unseen.forEach(act => {
+      const c = makeActivityCard(act, getProgress(act), "smart");
+      const days = daysSince(act.lastDone);
+      if (days < 999) {
+        const badge = document.createElement("span");
+        badge.className = "unseen-badge"; badge.textContent = `${days}d ago`;
+        c.querySelector(".card-name").appendChild(badge);
+      }
+      content.appendChild(c);
+    });
+  }
+}
+
+/* ── TRACKER ───────────────────────────────────────────────────────────────── */
+function renderTracker() {
+  const filterBar = document.getElementById("filter-bar");
+  filterBar.innerHTML = "";
+  ["all",...allTags()].forEach(tag=>{
+    const btn=document.createElement("button");
+    btn.className="filter-btn"+(currentFilter===tag?" active":"");
+    btn.textContent = tag==="all" ? "all" : tagLabel(tag);
+    btn.onclick=()=>{currentFilter=tag;renderTracker();};
+    filterBar.appendChild(btn);
+  });
+
+  const unseenSection = document.getElementById("unseen-section");
+  unseenSection.innerHTML = "";
+  const longUnseen = activities.filter(a => daysSince(a.lastDone) > 7 && a.lastDone);
+  if (longUnseen.length) {
+    const lbl = document.createElement("div");
+    lbl.className = "section-title"; lbl.textContent = "🕰 Haven't done in 7+ days";
+    unseenSection.appendChild(lbl);
+    longUnseen.slice(0,3).forEach(act => unseenSection.appendChild(makeActivityCard(act, getProgress(act), "tracker")));
+    const div = document.createElement("div"); div.style.height = "8px"; unseenSection.appendChild(div);
+  }
+
+  const list = document.getElementById("tracker-list");
+  list.innerHTML = "";
+  if (!activities.length) {
+    list.innerHTML = '<p style="color:#8888aa;text-align:center;padding:24px 0 8px;font-size:13px">No activities yet.<br>Tap ➕ below to add your first one.</p>';
+    return;
+  }
+  const lbl2 = document.createElement("div");
+  lbl2.className = "section-title"; lbl2.textContent = "All Activities";
+  list.appendChild(lbl2);
+  const shown = currentFilter==="all" ? activities : activities.filter(a=>a.tags.includes(currentFilter));
+  shown.forEach(act=> list.appendChild(makeActivityCard(act,getProgress(act),"tracker")));
+}
+function makeActivityCard(act, prog, fromView) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="card-row">
+      <span class="card-emoji">${act.emoji}</span>
+      <div class="card-info">
+        <div class="card-name">${act.name}</div>
+        <div class="card-meta">${prog.done}/${prog.total} tasks · ${prog.pct}%</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${prog.pct}%"></div></div>`;
+  card.onclick = () => openDetail(act.id, fromView);
+  return card;
+}
+
+/* ── DETAIL ────────────────────────────────────────────────────────────────── */
+function renderDetail() {
+  const act = activities.find(a => a.id === currentDetailId);
+  if (!act) return;
+  const prog = getProgress(act);
+  document.getElementById("detail-emoji").textContent = act.emoji;
+  document.getElementById("detail-title").textContent = act.name + " ✏️";
+  document.getElementById("detail-meta").textContent = `${prog.done}/${prog.total} done · ${prog.pct}% · tap title to rename`;
+  document.getElementById("detail-progress").style.width = prog.pct + "%";
+  document.getElementById("inspiration-text").textContent = pickQuote(act.tags);
+
+  const tasksEl = document.getElementById("detail-tasks");
+  tasksEl.innerHTML = "";
+  const grouped = { inprogress:[], practice:[], todo:[], done:[] };
+  act.subs.forEach(s => {
+    if (isPractice(s)) grouped.practice.push(s);
+    else if (isPicker(s)) grouped.practice.push(s);
+    else if (isGoal(s) && s.st!=="done") grouped.practice.push(s);
+    else if (s.st==="done") grouped.done.push(s);
+    else if (s.st==="inprogress") grouped.inprogress.push(s);
+    else grouped.todo.push(s);
+  });
+  if (grouped.inprogress.length){ tasksEl.appendChild(makeSectionLabel("▶ In Progress","#4a8aaa")); grouped.inprogress.forEach(s=>tasksEl.appendChild(makeSubCard(act.id,s))); }
+  if (grouped.practice.length){ tasksEl.appendChild(makeSectionLabel("🔁 Practice & Goals","#b8a8ee")); grouped.practice.forEach(s=>tasksEl.appendChild(makeSubCard(act.id,s))); }
+  if (grouped.todo.length){ tasksEl.appendChild(makeSectionLabel("To Do","#8888aa")); grouped.todo.forEach(s=>tasksEl.appendChild(makeSubCard(act.id,s))); }
+  if (grouped.done.length){ tasksEl.appendChild(makeSectionLabel("✓ Completed","#4aaa6a")); grouped.done.forEach(s=>tasksEl.appendChild(makeSubCard(act.id,s))); }
+}
+function makeSectionLabel(text, color) {
+  const el = document.createElement("div");
+  el.className = "section-title"; el.style.color = color; el.textContent = text;
+  return el;
+}
+function makeSubCard(actId, sub) {
+  const card = document.createElement("div");
+  const practice = isPractice(sub), goal = isGoal(sub), recurring = isRecurring(sub), picker = isPicker(sub);
+  const cls = (practice || picker || (goal && sub.st!=="done")) ? "practice" : sub.st;
+  card.className = "sub-card " + cls;
+
+  const hasMilestone = !!MILESTONES[sub.id];
+  const milestoneHTML = hasMilestone ? `<span class="milestone-badge">🏆 milestone</span>` : "";
+  const unlockedHTML = unlockedAchievements.includes(sub.id) ? `<span class="milestone-badge" style="border-color:#4aaa6a44;color:#4aaa6a">✓ achieved</span>` : "";
+
+  let typeTag = "";
+  if (picker) typeTag = `<span class="type-tag practice">🎲 picker</span>`;
+  else if (practice) typeTag = `<span class="type-tag practice">🔁 practice</span>`;
+  else if (goal) typeTag = `<span class="type-tag goal">🎯 ${sub.count||0}/${sub.target}</span>`;
+
+  let circle, stats = "", hint, actions;
+  if (picker) {
+    circle = `<div class="sub-circle practice">🎲</div>`;
+    const n = (sub.images||[]).length;
+    const streakTxt = (sub.streak>1) ? ` · 🔥 ${sub.streak}` : "";
+    stats = `<div class="sub-stats">${n} photo${n===1?"":"s"} · ${sub.count||0} done${streakTxt}</div>`;
+    hint = `<div class="sub-hint">${n?"Tap to pick a random one":"Tap to add photos"}</div>`;
+    actions = `
+      <button class="sub-action-btn" onclick="event.stopPropagation();addPickerPhotos('${actId}','${sub.id}')" title="Add photos">📷</button>
+      <button class="sub-action-btn" onclick="event.stopPropagation();editSubTask('${actId}','${sub.id}')" title="Edit">✏️</button>
+      <button class="sub-action-btn" onclick="event.stopPropagation();deleteSubTask('${actId}','${sub.id}')" title="Delete">🗑</button>`;
+  } else if (recurring && !(goal && sub.st==="done")) {
+    circle = `<div class="sub-circle practice">＋</div>`;
+    const streakTxt = (sub.streak>1) ? ` · 🔥 ${sub.streak}-day streak` : "";
+    const lastTxt = sub.lastDone ? ` · last ${daysSince(sub.lastDone)===0?"today":daysSince(sub.lastDone)+"d ago"}` : "";
+    stats = `<div class="sub-stats">${sub.count||0} session${(sub.count||0)===1?"":"s"}${streakTxt}${lastTxt}</div>`;
+    hint = `<div class="sub-hint">Tap ＋ to log a session</div>`;
+    actions = `
+      <button class="sub-action-btn" onclick="event.stopPropagation();cycleSubType('${actId}','${sub.id}')" title="Change type">🔁</button>
+      <button class="sub-action-btn" onclick="event.stopPropagation();editSubTask('${actId}','${sub.id}')" title="Edit">✏️</button>
+      <button class="sub-action-btn" onclick="event.stopPropagation();deleteSubTask('${actId}','${sub.id}')" title="Delete">🗑</button>`;
+  } else {
+    circle = `<div class="sub-circle ${sub.st}">${sub.st==="done"?"✓":sub.st==="inprogress"?"▶":""}</div>`;
+    hint = `<div class="sub-hint">Tap to cycle · ✏️ edit · 🔁 change type</div>`;
+    actions = `
+      <button class="sub-action-btn" onclick="event.stopPropagation();cycleSubType('${actId}','${sub.id}')" title="Change type">🔁</button>
+      <button class="sub-action-btn" onclick="event.stopPropagation();editSubTask('${actId}','${sub.id}')" title="Edit">✏️</button>
+      <button class="sub-action-btn" onclick="event.stopPropagation();deleteSubTask('${actId}','${sub.id}')" title="Delete">🗑</button>`;
+  }
+
+  card.innerHTML = `
+    ${circle}
+    <div style="flex:1;min-width:0">
+      <div class="sub-name ${sub.st==="done"&&!recurring&&!picker?"done":""}">${sub.name}${typeTag}${milestoneHTML}${unlockedHTML}</div>
+      ${stats}${hint}
+    </div>
+    <div class="sub-actions">${actions}</div>`;
+
+  card.onclick = () => {
+    const act = activities.find(a=>a.id===actId);
+    const s = act.subs.find(x=>x.id===sub.id);
+    if (isPicker(s)) {
+      openPicker(actId, sub.id);
+    } else if (isRecurring(s) && !(isGoal(s) && s.st==="done")) {
+      logSession(actId, sub.id);
+    } else {
+      const prevSt = s.st;
+      s.st = STATUS_NEXT[s.st]||"todo";
+      if (s.st==="done" && prevSt!=="done") { act.lastDone = todayDateStr(); checkAchievement(sub.id); }
+      saveData(); renderDetail();
+    }
+  };
+  return card;
+}
+function pickNewSubType(t){
+  newSubType = t;
+  document.querySelectorAll("#new-sub-type .type-opt").forEach(b=>b.classList.toggle("selected", b.dataset.t===t));
+  document.getElementById("new-sub-target").style.display = (t==="goal") ? "block" : "none";
+}
+function showAddSubInput() {
+  document.getElementById("add-sub-box").style.display = "block";
+  document.getElementById("add-task-btn").style.display = "none";
+  pickNewSubType("oneoff");
+  document.getElementById("new-sub-input").focus();
+}
+function hideAddSubInput() {
+  document.getElementById("add-sub-box").style.display = "none";
+  document.getElementById("add-task-btn").style.display = "block";
+  document.getElementById("new-sub-input").value = "";
+}
+function submitNewSub() {
+  const val = document.getElementById("new-sub-input").value.trim();
+  if (!val) return;
+  const act = activities.find(a=>a.id===currentDetailId);
+  let sub = { id:makeId(), name:val, st:"todo" };
+  if (newSubType==="practice") { sub.type="recurring"; sub.recurMode="infinite"; sub.count=0; sub.streak=0; sub.lastStreakDate=null; sub.lastDone=null; }
+  else if (newSubType==="goal") {
+    const n = parseInt(document.getElementById("new-sub-target").value,10);
+    sub.type="recurring"; sub.recurMode="target"; sub.target=(n&&n>0)?n:10; sub.count=0; sub.streak=0; sub.lastStreakDate=null; sub.lastDone=null;
+  }
+  else if (newSubType==="picker") { sub.type="picker"; sub.images=[]; sub.count=0; sub.streak=0; sub.lastStreakDate=null; sub.lastDone=null; }
+  act.subs.push(sub);
+  saveData(); hideAddSubInput(); renderDetail();
+}
+
+/* ── PHOTO PICKER (random subject chooser) ─────────────────────────────────── */
+let pickerCtx = { actId:null, subId:null, idx:null };
+function getPickerSub(){
+  const act = activities.find(a=>a.id===pickerCtx.actId);
+  return act ? act.subs.find(s=>s.id===pickerCtx.subId) : null;
+}
+function openPicker(actId, subId){
+  pickerCtx = { actId, subId, idx:null };
+  document.getElementById("picker-modal").classList.remove("hidden");
+  renderPickerBody();
+}
+function closePicker(){ document.getElementById("picker-modal").classList.add("hidden"); }
+function renderPickerBody(){
+  const sub = getPickerSub();
+  if (!sub) { closePicker(); return; }
+  document.getElementById("picker-title").textContent = sub.name;
+  const body = document.getElementById("picker-body");
+  const imgs = sub.images || [];
+  if (!imgs.length) {
+    body.innerHTML = `
+      <div class="picker-empty">No photos yet.<br>Add the pictures you want to choose from.</div>
+      <button class="primary-btn" onclick="addPickerPhotos('${pickerCtx.actId}','${pickerCtx.subId}')">📷 Add photos</button>`;
+    return;
+  }
+  if (pickerCtx.idx == null || pickerCtx.idx >= imgs.length) pickerCtx.idx = Math.floor(Math.random()*imgs.length);
+  body.innerHTML = `
+    <div class="picker-subject">🎨 Your subject</div>
+    <img class="picker-img" src="${imgs[pickerCtx.idx]}" alt="">
+    <div id="picker-toast" class="picker-toast"></div>
+    <div class="picker-btn-row">
+      <button class="picker-btn roll" onclick="pickerRoll()">🎲 Another</button>
+      <button class="picker-btn log" onclick="logPickerSession()">✓ Did it</button>
+    </div>
+    <div class="section-title" style="margin-top:6px">Pool · ${imgs.length} photo${imgs.length===1?"":"s"}</div>
+    <div class="picker-thumbs">${imgs.map((u,i)=>`<div class="picker-thumb"><img src="${u}"><button class="del" onclick="deletePickerImage(${i})">✕</button></div>`).join("")}</div>
+    <button class="ghost-btn full" onclick="addPickerPhotos('${pickerCtx.actId}','${pickerCtx.subId}')">📷 Add more photos</button>`;
+}
+function pickerRoll(){
+  const sub = getPickerSub();
+  const imgs = sub ? (sub.images||[]) : [];
+  if (imgs.length < 2) { renderPickerBody(); return; }
+  let n; do { n = Math.floor(Math.random()*imgs.length); } while (n === pickerCtx.idx);
+  pickerCtx.idx = n;
+  renderPickerBody();
+}
+function logPickerSession(){
+  logSession(pickerCtx.actId, pickerCtx.subId);
+  const t = document.getElementById("picker-toast");
+  if (t) t.textContent = "✓ Session logged!";
+}
+function addPickerPhotos(actId, subId){
+  pickerCtx.actId = actId; pickerCtx.subId = subId;
+  document.getElementById("picker-photo-input").click();
+}
+function onPickerPhotos(ev){
+  const files = ev.target.files; ev.target.value = "";
+  if (!files || !files.length) return;
+  const sub = getPickerSub();
+  if (!sub) return;
+  sub.images = sub.images || [];
+  let remaining = files.length;
+  Array.from(files).forEach(f => {
+    compressImageFile(f, dataUrl => {
+      if (dataUrl) sub.images.push(dataUrl);
+      if (--remaining === 0) {
+        try { saveData(); } catch(_) {}
+        renderDetail();
+        if (!document.getElementById("picker-modal").classList.contains("hidden")) renderPickerBody();
+      }
+    });
+  });
+}
+function deletePickerImage(i){
+  const sub = getPickerSub();
+  if (!sub) return;
+  sub.images.splice(i,1);
+  if (pickerCtx.idx >= sub.images.length) pickerCtx.idx = null;
+  try { saveData(); } catch(_) {}
+  renderDetail();
+  renderPickerBody();
+}
+function compressImageFile(file, cb){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1000;
+      let w = img.width, h = img.height;
+      if (w>max || h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+      const c = document.createElement("canvas");
+      c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      cb(c.toDataURL("image/jpeg", 0.72));
+    };
+    img.onerror = () => cb(null);
+    img.src = e.target.result;
+  };
+  reader.onerror = () => cb(null);
+  reader.readAsDataURL(file);
+}
+
+/* ── TODAY / JOURNAL ───────────────────────────────────────────────────────── */
+function renderToday() {
+  document.getElementById("today-date").textContent = friendlyDate(todayDateStr());
+  todayShare = false; setShareSwitch();
+
+  const todayEntry = journalEntries.find(e=>e.date===todayDateStr());
+  if (todayEntry) {
+    if (todayEntry.mood) selectMood(todayEntry.mood, true); else selectMood(null,true);
+    if (todayEntry.energy) selectTodayEnergy(todayEntry.energy, true);
+    document.getElementById("grateful-input").value = todayEntry.grateful||"";
+    document.getElementById("journal-input").value = todayEntry.journal||"";
+    todayShare = !!todayEntry.shared; setShareSwitch();
+    todayCheckedActivities = todayEntry.doneActivities ? [...todayEntry.doneActivities] : [];
+  } else {
+    todayMood=null; todayEnergy=null;
+    document.querySelectorAll(".mood-opt").forEach(b=>b.classList.remove("selected"));
+    document.querySelectorAll("#today-energy-picker .energy-opt").forEach(b=>b.classList.remove("selected"));
+    document.getElementById("grateful-input").value = "";
+    document.getElementById("journal-input").value = "";
+    todayCheckedActivities = [];
+  }
+
+  const list = document.getElementById("today-activities-list");
+  list.innerHTML = "";
+  activities.forEach(act => {
+    const div = document.createElement("div");
+    div.style.cssText = "display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #2a2a44";
+    const checked = todayCheckedActivities.includes(act.id);
+    div.innerHTML = `
+      <div onclick="toggleTodayActivity('${act.id}',this)" style="width:20px;height:20px;border-radius:50%;border:1px solid #2a2a44;background:${checked?"#4aaa6a":"#16152a"};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:11px;color:#fff">${checked?"✓":""}</div>
+      <span style="font-size:14px">${act.emoji}</span>
+      <span style="font-size:13px;color:#e0d8ff">${act.name}</span>`;
+    list.appendChild(div);
+  });
+
+  const pastEl = document.getElementById("past-entries");
+  pastEl.innerHTML = "";
+  const past = journalEntries.filter(e=>e.date!==todayDateStr()).slice(-5).reverse();
+  if (past.length) {
+    const lbl = document.createElement("div");
+    lbl.className="section-title"; lbl.textContent="Recent Entries";
+    pastEl.appendChild(lbl);
+    past.forEach(e => {
+      const moodEmojis=["","😞","😔","😐","🙂","😄"];
+      const div = document.createElement("div");
+      div.className = "journal-entry";
+      div.innerHTML = `
+        <div class="journal-date">${friendlyDate(e.date)} ${e.shared?'<span style="color:#b8a8ee">· shared 💜</span>':''}</div>
+        <div class="journal-mood-row">
+          <span style="font-size:20px">${moodEmojis[e.mood]||"😐"}</span>
+          <span style="font-size:12px;color:#8888aa;margin-left:4px">Energy: ${e.energy||"—"}</span>
+          ${e.doneActivities&&e.doneActivities.length?`<span style="font-size:11px;color:#4aaa6a;margin-left:8px">✓ ${e.doneActivities.length} activities</span>`:""}
+        </div>
+        ${e.grateful?`<div class="journal-text" style="margin-bottom:6px">🙏 ${escapeHtml(e.grateful)}</div>`:""}
+        ${e.journal?`<div class="journal-text">${escapeHtml(e.journal)}</div>`:""}`;
+      pastEl.appendChild(div);
+    });
+  }
+}
+function toggleTodayActivity(actId, circleEl) {
+  const idx = todayCheckedActivities.indexOf(actId);
+  if (idx > -1) { todayCheckedActivities.splice(idx, 1); circleEl.style.background = "#16152a"; circleEl.textContent = ""; }
+  else { todayCheckedActivities.push(actId); circleEl.style.background = "#4aaa6a"; circleEl.textContent = "✓"; }
+}
+function selectMood(val, render=true) {
+  todayMood = val;
+  if (render) document.querySelectorAll(".mood-opt").forEach(b => b.classList.toggle("selected", parseInt(b.dataset.mood)===val));
+}
+function selectTodayEnergy(val, render=true) {
+  todayEnergy = val;
+  if (render) document.querySelectorAll("#today-energy-picker .energy-opt").forEach(b => b.classList.toggle("selected", b.textContent.toLowerCase()===val));
+}
+function toggleShare(){ todayShare = !todayShare; setShareSwitch(); }
+function setShareSwitch(){ const sw = document.getElementById("share-switch"); if (sw) sw.classList.toggle("on", todayShare); }
+
+function saveTodayEntry() {
+  const grateful = document.getElementById("grateful-input").value.trim();
+  const journal = document.getElementById("journal-input").value.trim();
+  if (!todayMood && !grateful && !journal) { alert("Fill in at least your mood or something!"); return; }
+
+  const existing = journalEntries.findIndex(e=>e.date===todayDateStr());
+  const entry = { date: todayDateStr(), mood: todayMood, energy: todayEnergy, grateful, journal, doneActivities: [...todayCheckedActivities], shared: todayShare };
+
+  todayCheckedActivities.forEach(actId => { const act = activities.find(a=>a.id===actId); if (act) act.lastDone = todayDateStr(); });
+  if (existing > -1) journalEntries[existing] = entry;
+  else journalEntries.push(entry);
+
+  syncEntryToWall(entry);
+  saveData();
+  alert(todayShare ? "✅ Saved & shared to the wall!" : "✅ Today's entry saved!");
+  renderToday();
+}
+
+/* ── WALL ──────────────────────────────────────────────────────────────────── */
+function ensureProfile(){ if (!profile) profile = { name:"Izzie", avatar:"✨", id:"izzie" }; }
+function syncEntryToWall(entry){
+  ensureProfile();
+  wallPosts = wallPosts.filter(p => !(p.type==="journal" && p.authorId===profile.id && p.date===entry.date));
+  if (!entry.shared) { saveData(); return; }
+  const actNames = (entry.doneActivities||[]).map(id => { const a=activities.find(x=>x.id===id); return a?{emoji:a.emoji,name:a.name}:null; }).filter(Boolean);
+  wallPosts.push({
+    id: makeId(), type:"journal", authorId: profile.id, author: profile.name, avatar: profile.avatar,
+    date: entry.date, ts: Date.now(), mood: entry.mood, energy: entry.energy,
+    grateful: entry.grateful, journal: entry.journal, acts: actNames, reactions:{}, comments:[]
+  });
+  saveData();
+}
+function renderWall() {
+  const content = document.getElementById("wall-content");
+  content.innerHTML = "";
+  if (!profile) { renderProfileSetup(content); return; }
+
+  const banner = document.createElement("div");
+  banner.className = "wall-mode-banner";
+  banner.textContent = firebaseReady()
+    ? "☁️ Live — synced between Izzie & Claw"
+    : "🔒 Preview mode — local only. Wire up Firebase to sync between Izzie & Claw.";
+  content.appendChild(banner);
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "wall-post-btns";
+  const photoBtn = document.createElement("button");
+  photoBtn.className = "wall-photo-btn";
+  photoBtn.innerHTML = "📸 Photo";
+  photoBtn.onclick = () => document.getElementById("photo-input").click();
+  const videoBtn = document.createElement("button");
+  videoBtn.className = "wall-photo-btn";
+  videoBtn.innerHTML = "🎬 Video <span style='font-size:10px;color:#b8a8ee'>·6s</span>";
+  videoBtn.onclick = () => document.getElementById("video-input").click();
+  btnRow.appendChild(photoBtn); btnRow.appendChild(videoBtn);
+  content.appendChild(btnRow);
+
+  const feed = [...wallPosts].sort((a,b)=>b.ts-a.ts);
+  if (!feed.length) {
+    const empty = document.createElement("div");
+    empty.className = "wall-empty";
+    empty.innerHTML = "Nothing on the wall yet.<br>Share a journal entry or post a photo to start.";
+    content.appendChild(empty);
+    return;
+  }
+  feed.forEach(p => content.appendChild(makeWallPost(p)));
+}
+const PEOPLE = { izzie:{name:"Izzie",avatar:"✨"}, claw:{name:"Claw",avatar:"🐾"} };
+let pfWho = null, pfAvatar = null;
+function renderProfileSetup(content){
+  const box = document.createElement("div");
+  box.className = "profile-setup";
+  box.innerHTML = `
+    <div class="field-label">Who are you?</div>
+    <div class="chip-grid chip-grid-2" id="pf-who" style="margin-bottom:16px"></div>
+    <div class="field-label">Pick your avatar</div>
+    <div class="emoji-picker" id="pf-emoji"></div>
+    <button class="primary-btn" onclick="saveProfile()">Enter 💜</button>`;
+  content.appendChild(box);
+
+  pfWho = null; pfAvatar = null;
+  const whoWrap = box.querySelector("#pf-who");
+  Object.entries(PEOPLE).forEach(([id,p])=>{
+    const b=document.createElement("button"); b.className="chip"; b.textContent=`${p.avatar} ${p.name}`;
+    b.onclick=()=>{
+      pfWho=id; pfAvatar=p.avatar;
+      whoWrap.querySelectorAll(".chip").forEach(x=>{ x.style.background=""; x.style.borderColor=""; x.style.color=""; });
+      b.style.background="#2a1f4a"; b.style.borderColor="#c8b8ff"; b.style.color="#e0d8ff";
+      renderPfAvatars();
+    };
+    whoWrap.appendChild(b);
+  });
+  renderPfAvatars();
+}
+function renderPfAvatars(){
+  const avatars = ["✨","🐾","🌙","🦊","🐝","🌸","🎧","🦋","🔮","🌊","🍄","⭐","🐧","🌵","🎨","☕"];
+  const wrap = document.getElementById("pf-emoji");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  avatars.forEach(em=>{
+    const b=document.createElement("button"); b.className="emoji-opt"+(em===pfAvatar?" selected":""); b.textContent=em;
+    b.onclick=()=>{ pfAvatar=em; wrap.querySelectorAll(".emoji-opt").forEach(x=>x.classList.remove("selected")); b.classList.add("selected"); };
+    wrap.appendChild(b);
+  });
+}
+function saveProfile(){
+  if (!pfWho){ alert("Pick who you are first 💜"); return; }
+  profile = { name: PEOPLE[pfWho].name, avatar: pfAvatar || PEOPLE[pfWho].avatar, id: pfWho };
+  saveData();
+  renderWall();
+}
+function makeWallPost(p){
+  const el = document.createElement("div");
+  el.className = "wall-post";
+  let body = "";
+  if (p.type==="photo") {
+    body = `<img class="wall-photo" src="${p.dataUrl}" alt="">${p.caption?`<div class="wall-caption">${escapeHtml(p.caption)}</div>`:""}`;
+  } else if (p.type==="video") {
+    body = `<video class="wall-video" src="${p.dataUrl}" controls playsinline></video>${p.caption?`<div class="wall-caption">${escapeHtml(p.caption)}</div>`:""}`;
+  } else if (p.type==="journal") {
+    const moodEmojis=["","😞","😔","😐","🙂","😄"];
+    const actChips = (p.acts||[]).map(a=>`<span class="wall-act-chip">${a.emoji} ${escapeHtml(a.name)}</span>`).join("");
+    body = `
+      ${p.mood?`<div style="margin-bottom:6px"><span class="wall-mood">${moodEmojis[p.mood]||"😐"}</span><span style="font-size:12px;color:#8888aa">${p.energy?("energy: "+p.energy):""}</span></div>`:""}
+      ${p.grateful?`<div class="wall-caption" style="margin-bottom:6px">🙏 ${escapeHtml(p.grateful)}</div>`:""}
+      ${p.journal?`<div class="wall-caption">${escapeHtml(p.journal)}</div>`:""}
+      ${actChips?`<div class="wall-acts">${actChips}</div>`:""}`;
+  }
+  const reactions = p.reactions||{};
+  const rBtn = (emo)=>{
+    const count = reactions[emo]||0;
+    return `<button class="wall-react${count?" active":""}" onclick="reactToPost('${p.id}','${emo}')">${emo}${count?`<span class="wall-react-count">${count}</span>`:""}</button>`;
+  };
+  const commentsHtml = (p.comments||[]).map(c=>commentHtml(c)).join("");
+  el.innerHTML = `
+    <div class="wall-post-head">
+      <div class="wall-avatar">${p.avatar||"✨"}</div>
+      <div><div class="wall-who">${escapeHtml(p.author||"Someone")}</div><div class="wall-when">${timeAgo(p.ts)}</div></div>
+    </div>
+    ${body}
+    <div class="wall-react-row">${rBtn("❤️")}${rBtn("🔥")}${rBtn("👏")}${rBtn("🎉")}</div>
+    <div class="wall-comments" id="cmts-${p.id}">${commentsHtml}</div>
+    <div class="wall-cmt-row">
+      <input class="wall-cmt-input" id="cmt-${p.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter')addComment('${p.id}')">
+      <button class="wall-cmt-send" onclick="addComment('${p.id}')">Send</button>
+    </div>`;
+  return el;
+}
+function commentHtml(c){
+  return `<div class="wall-comment"><span class="c-av">${c.avatar||"✨"}</span><div class="c-body"><span class="c-who">${escapeHtml(c.author||"")}</span>${escapeHtml(c.text)}<span class="c-when">${timeAgo(c.ts)}</span></div></div>`;
+}
+function addComment(postId){
+  const input = document.getElementById("cmt-"+postId);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  ensureProfile();
+  const p = wallPosts.find(x=>x.id===postId);
+  if (!p) return;
+  p.comments = p.comments || [];
+  const c = { authorId:profile.id, author:profile.name, avatar:profile.avatar, text, ts:Date.now() };
+  p.comments.push(c);
+  saveData();
+  const list = document.getElementById("cmts-"+postId);
+  if (list) list.insertAdjacentHTML("beforeend", commentHtml(c));
+  input.value = "";
+}
+function reactToPost(postId, emo){
+  const p = wallPosts.find(x=>x.id===postId);
+  if (!p) return;
+  p.reactions = p.reactions||{};
+  p.reactions[emo] = (p.reactions[emo]||0)+1;
+  saveData(); renderWall();
+}
+function onPhotoPicked(ev){
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+  ensureProfile();
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1000;
+      let w = img.width, h = img.height;
+      if (w>max || h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+      const canvas = document.createElement("canvas");
+      canvas.width=w; canvas.height=h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+      const caption = prompt("Add a caption? (optional)") || "";
+      wallPosts.push({ id:makeId(), type:"photo", authorId:profile.id, author:profile.name, avatar:profile.avatar, ts:Date.now(), dataUrl, caption, reactions:{}, comments:[] });
+      saveData(); renderWall();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function onVideoPicked(ev){
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+  ensureProfile();
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.preload = "metadata";
+  v.onloadedmetadata = () => {
+    if (v.duration > 6.5) {
+      URL.revokeObjectURL(url);
+      alert("Please pick a clip 6 seconds or shorter 🎬");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const caption = prompt("Add a caption? (optional)") || "";
+      wallPosts.push({ id:makeId(), type:"video", authorId:profile.id, author:profile.name, avatar:profile.avatar, ts:Date.now(), dataUrl:e.target.result, caption, reactions:{}, comments:[] });
+      try { saveData(); } catch(_) {}
+      URL.revokeObjectURL(url);
+      renderWall();
+    };
+    reader.readAsDataURL(file);
+  };
+  v.onerror = () => { URL.revokeObjectURL(url); alert("Couldn't read that video file."); };
+  v.src = url;
+}
+function seedWallSample(){
+  if (wallPosts.length) return;
+  // Show a friendly starter post from the *other* person, for layout in preview.
+  const meIsClaw = profile && profile.id === "claw";
+  const other = meIsClaw
+    ? { id:"izzie", author:"Izzie", avatar:"✨", journal:"Set up my activities and did a bit of piano ✨ so glad we've got this space.", act:{emoji:"🎹",name:"Piano"}, cAuthor:"Claw", cAv:"🐾" }
+    : { id:"claw",  author:"Claw",  avatar:"🐾", journal:"Got an hour of guitar in. This space is looking cozy already 🎸", act:{emoji:"🎸",name:"Guitar"}, cAuthor:"Izzie", cAv:"✨" };
+  wallPosts.push({
+    id: makeId(), type:"journal", authorId:other.id, author:other.author, avatar:other.avatar,
+    date: yesterdayStr(), ts: Date.now()-1000*60*60*20, mood:4, energy:"medium",
+    grateful:"slow mornings and good coffee", journal:other.journal,
+    acts:[other.act], reactions:{"🔥":1},
+    comments:[{authorId:(meIsClaw?"claw":"izzie"),author:other.cAuthor,avatar:other.cAv,text:"love this 🥹",ts:Date.now()-1000*60*60*19}]
+  });
+}
+
+/* ── INSIGHTS ──────────────────────────────────────────────────────────────── */
+function renderInsights() {
+  const content = document.getElementById("insights-content");
+  content.innerHTML = "";
+  if (journalEntries.length === 0) {
+    content.innerHTML = '<p style="color:#8888aa;text-align:center;padding:40px 0">Log some journal entries in Today to see your insights!</p>';
+    return;
+  }
+  const filterDiv = document.createElement("div");
+  filterDiv.style.cssText = "display:flex;gap:8px;margin-bottom:20px";
+  ["Week","Month","All Time"].forEach((label,i) => {
+    const btn = document.createElement("button");
+    btn.className = "filter-btn" + (i===0?" active":"");
+    btn.textContent = label;
+    btn.onclick = () => {
+      document.querySelectorAll("#insights-content .filter-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      renderInsightStats(content, i===0?7:i===1?30:9999);
+    };
+    filterDiv.appendChild(btn);
+  });
+  content.appendChild(filterDiv);
+  const statsDiv = document.createElement("div"); statsDiv.id = "insight-stats"; content.appendChild(statsDiv);
+  renderInsightStats(content, 7);
+}
+function renderInsightStats(container, days) {
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+  const entries = journalEntries.filter(e => new Date(e.date+"T12:00:00") >= cutoff);
+  const statsDiv = document.getElementById("insight-stats") || container;
+  statsDiv.innerHTML = "";
+  if (entries.length===0) { statsDiv.innerHTML = '<p style="color:#8888aa;text-align:center;padding:20px 0">No entries in this period yet.</p>'; return; }
+
+  const avgMood = entries.reduce((s,e)=>s+(e.mood||3),0)/entries.length;
+  const energyMap = {low:1,medium:2,high:3};
+  const avgEnergy = entries.reduce((s,e)=>s+(energyMap[e.energy]||2),0)/entries.length;
+  const energyLabels = ["","Low","Medium","High"];
+
+  const grid = document.createElement("div"); grid.className = "stat-grid";
+  grid.innerHTML = `
+    <div class="stat-card"><div class="stat-number">${Math.round(avgMood*10)/10} ${["","😞","😔","😐","🙂","😄"][Math.round(avgMood)]||"😐"}</div><div class="stat-label">Avg Mood</div></div>
+    <div class="stat-card"><div class="stat-number">${energyLabels[Math.round(avgEnergy)]||"Med"}</div><div class="stat-label">Avg Energy</div></div>
+    <div class="stat-card"><div class="stat-number">${entries.length}</div><div class="stat-label">Days Logged</div></div>
+    <div class="stat-card"><div class="stat-number">${entries.reduce((s,e)=>s+(e.doneActivities||[]).length,0)}</div><div class="stat-label">Activities Done</div></div>`;
+  statsDiv.appendChild(grid);
+
+  const timelineLabel = document.createElement("div"); timelineLabel.className = "section-title"; timelineLabel.textContent = "Mood Timeline"; statsDiv.appendChild(timelineLabel);
+  const timeline = document.createElement("div");
+  timeline.style.cssText = "display:flex;gap:6px;align-items:flex-end;height:80px;margin-bottom:16px;padding:8px;background:linear-gradient(135deg,#16152a,#1a1f30);border:1px solid #2a2a44;border-radius:12px";
+  entries.slice(-14).forEach(e => {
+    const bar = document.createElement("div");
+    bar.style.cssText = `flex:1;background:linear-gradient(180deg,#c8b8ff,#8a6fff);border-radius:3px 3px 0 0;height:${((e.mood||3)/5)*100}%;min-width:8px;opacity:0.8;cursor:pointer;`;
+    bar.title = `${friendlyDate(e.date)}: mood ${e.mood}/5`;
+    timeline.appendChild(bar);
+  });
+  statsDiv.appendChild(timeline);
+
+  const actCount = {};
+  entries.forEach(e => (e.doneActivities||[]).forEach(id => { actCount[id]=(actCount[id]||0)+1; }));
+  const topActs = Object.entries(actCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if (topActs.length) {
+    const topLabel = document.createElement("div"); topLabel.className = "section-title"; topLabel.textContent = "Most Active"; statsDiv.appendChild(topLabel);
+    topActs.forEach(([id,count]) => {
+      const act = activities.find(a=>a.id===id); if (!act) return;
+      const div = document.createElement("div");
+      div.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,#16152a,#1a1f30);border:1px solid #2a2a44;border-radius:12px;margin-bottom:8px";
+      div.innerHTML = `<span style="font-size:22px">${act.emoji}</span><span style="flex:1;font-size:13px;color:#e0d8ff">${act.name}</span><span style="font-size:12px;color:#c8b8ff;font-weight:700">${count}x</span>`;
+      statsDiv.appendChild(div);
+    });
+  }
+
+  if (unlockedAchievements.length) {
+    const achLabel = document.createElement("div"); achLabel.className = "section-title"; achLabel.style.marginTop="16px"; achLabel.textContent = "🏆 Achievements"; statsDiv.appendChild(achLabel);
+    const achGrid = document.createElement("div"); achGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
+    unlockedAchievements.forEach(id => {
+      const m = MILESTONES[id]; if (!m) return;
+      const div = document.createElement("div");
+      div.style.cssText = "background:linear-gradient(135deg,#1a1535,#0f1a2a);border:1px solid #c8b8ff44;border-radius:12px;padding:12px;text-align:center";
+      div.innerHTML = `<div style="font-size:28px">${m.icon}</div><div style="font-size:11px;color:#c8b8ff;margin-top:4px">${m.title}</div>`;
+      achGrid.appendChild(div);
+    });
+    statsDiv.appendChild(achGrid);
+  }
+}
+
+/* ── ADD ACTIVITY MODAL ────────────────────────────────────────────────────── */
+function openAddModal() {
+  selectedEmoji="✨"; selectedTags=[]; selectedEnergy=[];
+  const epEl=document.getElementById("emoji-picker"); epEl.innerHTML="";
+  EMOJI_OPTIONS.forEach(em=>{
+    const b=document.createElement("button"); b.className="emoji-opt"+(em===selectedEmoji?" selected":""); b.textContent=em;
+    b.onclick=()=>{selectedEmoji=em;document.querySelectorAll("#emoji-picker .emoji-opt").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");};
+    epEl.appendChild(b);
+  });
+  renderTagPicker();
+  const enEl=document.getElementById("energy-picker"); enEl.innerHTML="";
+  ["low","medium","high"].forEach(level=>{
+    const b=document.createElement("button"); b.className="energy-opt"; b.textContent=level;
+    b.onclick=()=>{if(selectedEnergy.includes(level)){selectedEnergy=selectedEnergy.filter(e=>e!==level);b.classList.remove("selected");}else{selectedEnergy.push(level);b.classList.add("selected");}};
+    enEl.appendChild(b);
+  });
+  document.getElementById("new-act-name").value="";
+  document.getElementById("new-act-subs").value="";
+  document.getElementById("add-modal").classList.remove("hidden");
+}
+function renderTagPicker(){
+  const tpEl=document.getElementById("tag-picker"); tpEl.innerHTML="";
+  allTags().forEach(tag=>{
+    const b=document.createElement("button"); b.className="tag-opt"+(selectedTags.includes(tag)?" selected":""); b.textContent=tagEmoji(tag)+" "+tagLabel(tag);
+    b.onclick=()=>{ if(selectedTags.includes(tag)){selectedTags=selectedTags.filter(t=>t!==tag);b.classList.remove("selected");} else {selectedTags.push(tag);b.classList.add("selected");} };
+    tpEl.appendChild(b);
+  });
+  const add=document.createElement("button"); add.className="tag-opt add"; add.textContent="＋ New tag";
+  add.onclick=()=>{
+    const name=(prompt("New category tag name:")||"").trim().toLowerCase();
+    if(!name) return;
+    if(!allTags().includes(name)){ customTags.push(name); saveData(); }
+    if(!selectedTags.includes(name)) selectedTags.push(name);
+    renderTagPicker();
+  };
+  tpEl.appendChild(add);
+}
+function closeAddModal(){document.getElementById("add-modal").classList.add("hidden");}
+function saveNewActivity(){
+  const name=document.getElementById("new-act-name").value.trim();
+  if(!name||!selectedTags.length||!selectedEnergy.length){alert("Please fill in name, at least one tag, and energy level.");return;}
+  const subText=document.getElementById("new-act-subs").value;
+  const subs=subText.split("\n").filter(s=>s.trim()).map(s=>({id:makeId(),name:s.trim(),st:"todo"}));
+  activities.push({id:makeId(),name,emoji:selectedEmoji,tags:selectedTags,minTime:Number(document.getElementById("new-act-time").value),energy:selectedEnergy,lastDone:null,subs:subs.length?subs:[{id:makeId(),name:"Get started",st:"todo"}]});
+  saveData(); closeAddModal();
+  if(currentView==="tracker")renderTracker();
+}
+
+/* ── IDENTITY & FIRST-RUN SEEDING ──────────────────────────────────────────── */
+// Old tag names → new broad categories, so returning data stays consistent.
+const TAG_MIGRATE = { physical:"movement", hustle:"building" };
+function migrateActivity(a){
+  if (a && Array.isArray(a.tags)) a.tags = a.tags.map(t => TAG_MIGRATE[t] || t);
+  return a;
+}
+// Izzie gets her curated list; anyone else starts blank and builds their own.
+function seedForIdentity(id){
+  activities = (id === "izzie") ? JSON.parse(JSON.stringify(DEFAULT_ACTIVITIES)) : [];
+  saveData();
+}
+function showIdentityGate(){
+  const ov = document.createElement("div");
+  ov.className = "modal-overlay";
+  ov.style.alignItems = "center";
+  ov.id = "identity-gate";
+  ov.innerHTML = `
+    <div class="modal" style="border-radius:20px;max-width:340px;text-align:center;padding:28px 22px 30px">
+      <div style="font-size:42px;margin-bottom:8px">💜</div>
+      <h3 style="margin-bottom:6px">Welcome!</h3>
+      <p style="color:#8888aa;font-size:13px;margin-bottom:18px">Who's using this?</p>
+      <div class="chip-grid chip-grid-2" id="gate-who"></div>
+      <p style="color:#6a6a88;font-size:11px;margin-top:14px">Izzie starts with her activities. Claw starts fresh.</p>
+    </div>`;
+  document.body.appendChild(ov);
+  const wrap = ov.querySelector("#gate-who");
+  Object.entries(PEOPLE).forEach(([id,p])=>{
+    const b=document.createElement("button"); b.className="chip"; b.style.padding="18px 10px"; b.style.fontSize="15px";
+    b.textContent = `${p.avatar} ${p.name}`;
+    b.onclick = ()=> finishIdentity(id);
+    wrap.appendChild(b);
+  });
+}
+function finishIdentity(id){
+  profile = { name:PEOPLE[id].name, avatar:PEOPLE[id].avatar, id };
+  seedForIdentity(id);
+  saveData();
+  const g = document.getElementById("identity-gate"); if (g) g.remove();
+  startApp();
+  showView("home");
+}
+function startApp(){
+  seedWallSample();
+  rotateHomeQuote();
+  renderSuggest();
+}
+
+/* ── INIT ──────────────────────────────────────────────────────────────────── */
+loadData();
+if (!hasSavedActivities && !profile) {
+  showIdentityGate();          // brand-new device: ask who it is, then seed
+} else {
+  if (!hasSavedActivities && profile) seedForIdentity(profile.id);
+  startApp();
+}
+</script>
+</body>
+</html>
