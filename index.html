@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="What Should I Do?">
-<title>What Should I Do?</title>
+<meta name="apple-mobile-web-app-title" content="im bored">
+<title>im bored</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body {
@@ -268,8 +272,8 @@ h3 { font-size: 16px; font-weight: 700; color: #c8b8ff; letter-spacing: 1px; }
   <div id="view-home" class="view active">
     <div class="center" style="margin-bottom:22px;padding-top:8px">
       <div style="font-size:40px;margin-bottom:10px">✨</div>
-      <h1>What Should I Do?</h1>
-      <p class="subtitle">Your Personal Activity Guide</p>
+      <h1>im bored</h1>
+      <p class="subtitle">Now let's find you something</p>
     </div>
     <div class="home-quote">
       <div id="home-quote-text" class="home-quote-text"></div>
@@ -507,12 +511,13 @@ h3 { font-size: 16px; font-weight: 700; color: #c8b8ff; letter-spacing: 1px; }
    Paste your izzies-apps config here in the second pass to go live.
    ═══════════════════════════════════════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-  // apiKey: "...",
-  // authDomain: "...",
-  // databaseURL: "...",
-  // projectId: "izzies-apps",
-  // storageBucket: "...",
-  // appId: "..."
+  apiKey: "AIzaSyBwADa3_5tT-cUTDHEsWZnHsy3ZIjgZHmI",
+  authDomain: "izzies-apps.firebaseapp.com",
+  databaseURL: "https://izzies-apps-default-rtdb.firebaseio.com",
+  projectId: "izzies-apps",
+  storageBucket: "izzies-apps.firebasestorage.app",
+  messagingSenderId: "260909314881",
+  appId: "1:260909314881:web:2080f2d3ea32537a6c27c0"
 };
 function firebaseReady(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey); }
 
@@ -1448,7 +1453,14 @@ function saveTodayEntry() {
   if (!todayMood && !grateful && !journal) { alert("Fill in at least your mood or something!"); return; }
 
   const existing = journalEntries.findIndex(e=>e.date===todayDateStr());
-  const entry = { date: todayDateStr(), mood: todayMood, energy: todayEnergy, grateful, journal, doneActivities: [...todayCheckedActivities], shared: todayShare };
+
+  // If live but not signed in, can't share yet — save privately and tell them.
+  let shareNow = todayShare;
+  if (todayShare && firebaseReady() && (!fb || !fbUser)) {
+    alert("Sign in on the Us tab first to share — saved privately for now.");
+    shareNow = false;
+  }
+  const entry = { date: todayDateStr(), mood: todayMood, energy: todayEnergy, grateful, journal, doneActivities: [...todayCheckedActivities], shared: shareNow };
 
   todayCheckedActivities.forEach(actId => { const act = activities.find(a=>a.id===actId); if (act) act.lastDone = todayDateStr(); });
   if (existing > -1) journalEntries[existing] = entry;
@@ -1456,13 +1468,25 @@ function saveTodayEntry() {
 
   syncEntryToWall(entry);
   saveData();
-  alert(todayShare ? "✅ Saved & shared to the wall!" : "✅ Today's entry saved!");
+  alert(shareNow ? "✅ Saved & shared with Us 💜" : "✅ Today's entry saved!");
   renderToday();
 }
 
 /* ── WALL ──────────────────────────────────────────────────────────────────── */
 function ensureProfile(){ if (!profile) profile = { name:"Izzie", avatar:"✨", id:"izzie" }; }
 function syncEntryToWall(entry){
+  if (firebaseReady() && fb && fbUser) {
+    const key = "j_" + fbUser.uid + "_" + entry.date;
+    const ref = fb.db.ref("wall/" + key);
+    if (!entry.shared) { ref.remove().catch(()=>{}); return; }
+    const actNames = (entry.doneActivities||[]).map(id => { const a=activities.find(x=>x.id===id); return a?{emoji:a.emoji,name:a.name}:null; }).filter(Boolean);
+    ref.set({
+      type:"journal", authorId:profile.id, author:profile.name, avatar:profile.avatar,
+      date:entry.date, ts:Date.now(), mood:entry.mood||null, energy:entry.energy||null,
+      grateful:entry.grateful||"", journal:entry.journal||"", acts:actNames.length?actNames:null
+    }).catch(e=>{ console.error(e); });
+    return;
+  }
   ensureProfile();
   wallPosts = wallPosts.filter(p => !(p.type==="journal" && p.authorId===profile.id && p.date===entry.date));
   if (!entry.shared) { saveData(); return; }
@@ -1477,15 +1501,40 @@ function syncEntryToWall(entry){
 function renderWall() {
   const content = document.getElementById("wall-content");
   content.innerHTML = "";
+
+  // ── Live (Firebase) mode ──
+  if (firebaseReady() && fb) {
+    if (!fbUser) { renderSignIn(content); return; }
+    content.innerHTML = '<div class="wall-empty">Loading…</div>';
+    ensureWallProfile(status => {
+      content.innerHTML = "";
+      if (status === "need-setup") { renderProfileSetup(content); return; }
+      renderWallFeedFirebase(content);
+    });
+    return;
+  }
+
+  // ── Local preview mode ──
   if (!profile) { renderProfileSetup(content); return; }
 
   const banner = document.createElement("div");
   banner.className = "wall-mode-banner";
-  banner.textContent = firebaseReady()
-    ? "☁️ Live — synced between Izzie & Claw"
-    : "🔒 Preview mode — local only. Wire up Firebase to sync between Izzie & Claw.";
+  banner.textContent = "🔒 Preview mode — local only. Wire up Firebase to sync between Izzie & Claw.";
   content.appendChild(banner);
 
+  content.appendChild(makeWallPostButtons());
+
+  const feed = [...wallPosts].sort((a,b)=>b.ts-a.ts);
+  if (!feed.length) {
+    const empty = document.createElement("div");
+    empty.className = "wall-empty";
+    empty.innerHTML = "Nothing here yet.<br>Share a journal entry or post a photo to start.";
+    content.appendChild(empty);
+    return;
+  }
+  feed.forEach(p => content.appendChild(makeWallPost(p)));
+}
+function makeWallPostButtons(){
   const btnRow = document.createElement("div");
   btnRow.className = "wall-post-btns";
   const photoBtn = document.createElement("button");
@@ -1497,17 +1546,7 @@ function renderWall() {
   videoBtn.innerHTML = "🎬 Video <span style='font-size:10px;color:#b8a8ee'>·6s</span>";
   videoBtn.onclick = () => document.getElementById("video-input").click();
   btnRow.appendChild(photoBtn); btnRow.appendChild(videoBtn);
-  content.appendChild(btnRow);
-
-  const feed = [...wallPosts].sort((a,b)=>b.ts-a.ts);
-  if (!feed.length) {
-    const empty = document.createElement("div");
-    empty.className = "wall-empty";
-    empty.innerHTML = "Nothing on the wall yet.<br>Share a journal entry or post a photo to start.";
-    content.appendChild(empty);
-    return;
-  }
-  feed.forEach(p => content.appendChild(makeWallPost(p)));
+  return btnRow;
 }
 const PEOPLE = { izzie:{name:"Izzie",avatar:"✨"}, claw:{name:"Claw",avatar:"🐾"} };
 let pfWho = null, pfAvatar = null;
@@ -1550,6 +1589,10 @@ function renderPfAvatars(){
 function saveProfile(){
   if (!pfWho){ alert("Pick who you are first 💜"); return; }
   profile = { name: PEOPLE[pfWho].name, avatar: pfAvatar || PEOPLE[pfWho].avatar, id: pfWho };
+  if (firebaseReady() && fb && fbUser) {
+    profile.uid = fbUser.uid;
+    try { fb.db.ref("profiles/"+fbUser.uid).set({ name:profile.name, avatar:profile.avatar, id:profile.id }); } catch(_){}
+  }
   saveData();
   renderWall();
 }
@@ -1598,6 +1641,11 @@ function addComment(postId){
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
+  if (firebaseReady() && fb && fbUser) {
+    fb.db.ref("wall/"+postId+"/comments").push({ authorId:profile.id, author:profile.name, avatar:profile.avatar, text, ts:Date.now() });
+    input.value = "";
+    return; // live listener re-renders
+  }
   ensureProfile();
   const p = wallPosts.find(x=>x.id===postId);
   if (!p) return;
@@ -1610,6 +1658,10 @@ function addComment(postId){
   input.value = "";
 }
 function reactToPost(postId, emo){
+  if (firebaseReady() && fb && fbUser) {
+    fb.db.ref("wall/"+postId+"/reactions/"+emo).transaction(v => (v||0)+1);
+    return; // live listener re-renders
+  }
   const p = wallPosts.find(x=>x.id===postId);
   if (!p) return;
   p.reactions = p.reactions||{};
@@ -1620,6 +1672,7 @@ function onPhotoPicked(ev){
   const file = ev.target.files && ev.target.files[0];
   ev.target.value = "";
   if (!file) return;
+  if (firebaseReady() && fb && fbUser) { fbPostPhoto(file); return; }
   ensureProfile();
   const reader = new FileReader();
   reader.onload = e => {
@@ -1640,6 +1693,17 @@ function onPhotoPicked(ev){
   };
   reader.readAsDataURL(file);
 }
+function fbPostPhoto(file){
+  compressImageFile(file, dataUrl => {
+    if (!dataUrl) { alert("Couldn't read that image."); return; }
+    const caption = prompt("Add a caption? (optional)") || "";
+    const ref = fb.storage.ref("photos/"+fbUser.uid+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7));
+    ref.putString(dataUrl, "data_url")
+      .then(() => ref.getDownloadURL())
+      .then(url => fb.db.ref("wall").push({ type:"photo", authorId:profile.id, author:profile.name, avatar:profile.avatar, ts:Date.now(), mediaUrl:url, caption }))
+      .catch(e => { console.error(e); alert("Upload failed: "+(e && e.message || "")); });
+  });
+}
 function onVideoPicked(ev){
   const file = ev.target.files && ev.target.files[0];
   ev.target.value = "";
@@ -1654,12 +1718,13 @@ function onVideoPicked(ev){
       alert("Please pick a clip 6 seconds or shorter 🎬");
       return;
     }
+    URL.revokeObjectURL(url);
+    if (firebaseReady() && fb && fbUser) { fbPostVideo(file); return; }
     const reader = new FileReader();
     reader.onload = e => {
       const caption = prompt("Add a caption? (optional)") || "";
       wallPosts.push({ id:makeId(), type:"video", authorId:profile.id, author:profile.name, avatar:profile.avatar, ts:Date.now(), dataUrl:e.target.result, caption, reactions:{}, comments:[] });
       try { saveData(); } catch(_) {}
-      URL.revokeObjectURL(url);
       renderWall();
     };
     reader.readAsDataURL(file);
@@ -1667,7 +1732,16 @@ function onVideoPicked(ev){
   v.onerror = () => { URL.revokeObjectURL(url); alert("Couldn't read that video file."); };
   v.src = url;
 }
+function fbPostVideo(file){
+  const caption = prompt("Add a caption? (optional)") || "";
+  const ref = fb.storage.ref("videos/"+fbUser.uid+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7));
+  ref.put(file)
+    .then(() => ref.getDownloadURL())
+    .then(url => fb.db.ref("wall").push({ type:"video", authorId:profile.id, author:profile.name, avatar:profile.avatar, ts:Date.now(), mediaUrl:url, caption }))
+    .catch(e => { console.error(e); alert("Upload failed: "+(e && e.message || "")); });
+}
 function seedWallSample(){
+  if (firebaseReady()) return;   // live mode uses the real shared feed
   if (wallPosts.length) return;
   // Show a friendly starter post from the *other* person, for layout in preview.
   const meIsClaw = profile && profile.id === "claw";
@@ -1681,6 +1755,110 @@ function seedWallSample(){
     acts:[other.act], reactions:{"🔥":1},
     comments:[{authorId:(meIsClaw?"claw":"izzie"),author:other.cAuthor,avatar:other.cAv,text:"love this 🥹",ts:Date.now()-1000*60*60*19}]
   });
+}
+
+/* ── FIREBASE LIVE SYNC ────────────────────────────────────────────────────── */
+let fb = null, fbUser = null, fbWallPosts = [], wallListenerAttached = false;
+function initFirebase(){
+  if (!firebaseReady() || typeof firebase === "undefined") return;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fb = { auth:firebase.auth(), db:firebase.database(), storage:firebase.storage() };
+    fb.auth.onAuthStateChanged(u => {
+      fbUser = u || null;
+      if (!fbUser) wallListenerAttached = false;
+      if (currentView === "wall") renderWall();
+    });
+  } catch(e) { console.error("Firebase init failed:", e); fb = null; }
+}
+function fbSignIn(){
+  const email = document.getElementById("fb-email").value.trim();
+  const pass = document.getElementById("fb-pass").value;
+  const err = document.getElementById("fb-error");
+  if (!email || !pass) { err.textContent = "Enter your email and password."; return; }
+  err.textContent = "Signing in…";
+  fb.auth.signInWithEmailAndPassword(email, pass).catch(e => { err.textContent = fbAuthError(e); });
+}
+function fbSignOut(){ if (fb) fb.auth.signOut(); }
+function fbAuthError(e){
+  const c = (e && e.code) || "";
+  if (c.includes("wrong-password") || c.includes("invalid-credential")) return "Wrong email or password.";
+  if (c.includes("user-not-found")) return "No account with that email.";
+  if (c.includes("invalid-email")) return "That doesn't look like an email.";
+  if (c.includes("too-many-requests")) return "Too many tries — wait a moment.";
+  if (c.includes("network")) return "Network problem — check your connection.";
+  return "Couldn't sign in. " + ((e && e.message) || "");
+}
+function renderSignIn(content){
+  content.innerHTML = `
+    <div class="profile-setup">
+      <div style="text-align:center;font-size:38px;margin-bottom:6px">💜</div>
+      <p style="text-align:center;color:#8888aa;font-size:13px;margin-bottom:16px">Sign in to see your shared space</p>
+      <div class="field-label">Email</div>
+      <input id="fb-email" class="field-input" type="email" autocomplete="username" placeholder="you@email.com">
+      <div class="field-label">Password</div>
+      <input id="fb-pass" class="field-input" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')fbSignIn()">
+      <div id="fb-error" style="color:#d88;font-size:12px;margin-bottom:12px;min-height:15px"></div>
+      <button class="primary-btn" onclick="fbSignIn()">Sign in</button>
+    </div>`;
+}
+function ensureWallProfile(cb){
+  if (profile && profile.uid === fbUser.uid) { cb("ok"); return; }
+  fb.db.ref("profiles/"+fbUser.uid).get().then(snap => {
+    if (snap.exists()) {
+      const p = snap.val();
+      profile = { name:p.name, avatar:p.avatar, id:p.id||"user", uid:fbUser.uid };
+      saveData(); cb("ok");
+    } else if (profile) {
+      profile.uid = fbUser.uid;
+      fb.db.ref("profiles/"+fbUser.uid).set({ name:profile.name, avatar:profile.avatar, id:profile.id }).catch(()=>{});
+      saveData(); cb("ok");
+    } else cb("need-setup");
+  }).catch(() => cb(profile ? "ok" : "need-setup"));
+}
+function normalizeFbPost(key, v){
+  const p = Object.assign({}, v);
+  p.id = key;
+  p.reactions = v.reactions || {};
+  p.comments = v.comments
+    ? Object.keys(v.comments).map(k => Object.assign({ _k:k }, v.comments[k])).sort((a,b)=>a.ts-b.ts)
+    : [];
+  if (v.mediaUrl && !p.dataUrl) p.dataUrl = v.mediaUrl;
+  p.acts = v.acts || [];
+  return p;
+}
+function renderWallFeedFirebase(content){
+  const banner = document.createElement("div");
+  banner.className = "wall-mode-banner";
+  banner.innerHTML = `☁️ Live · ${profile.avatar} ${escapeHtml(profile.name)} · <span style="cursor:pointer;text-decoration:underline" onclick="fbSignOut()">sign out</span>`;
+  content.appendChild(banner);
+
+  content.appendChild(makeWallPostButtons());
+
+  const feed = document.createElement("div");
+  feed.id = "wall-feed";
+  content.appendChild(feed);
+
+  if (!wallListenerAttached) {
+    fb.db.ref("wall").limitToLast(150).on("value", snap => {
+      fbWallPosts = [];
+      snap.forEach(ch => { fbWallPosts.push(normalizeFbPost(ch.key, ch.val())); });
+      if (currentView === "wall") renderFbFeedList();
+    }, err => { console.error(err); });
+    wallListenerAttached = true;
+  }
+  renderFbFeedList();
+}
+function renderFbFeedList(){
+  const feed = document.getElementById("wall-feed");
+  if (!feed) return;
+  feed.innerHTML = "";
+  const posts = [...fbWallPosts].sort((a,b)=>b.ts-a.ts);
+  if (!posts.length) {
+    feed.innerHTML = '<div class="wall-empty">Nothing here yet.<br>Share a journal entry or post a photo to start.</div>';
+    return;
+  }
+  posts.forEach(p => feed.appendChild(makeWallPost(p)));
 }
 
 /* ── INSIGHTS ──────────────────────────────────────────────────────────────── */
@@ -1865,6 +2043,7 @@ function startApp(){
 
 /* ── INIT ──────────────────────────────────────────────────────────────────── */
 loadData();
+initFirebase();
 if (!hasSavedActivities && !profile) {
   showIdentityGate();          // brand-new device: ask who it is, then seed
 } else {
