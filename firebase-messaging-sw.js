@@ -10,13 +10,29 @@ firebase.initializeApp({
   appId: "1:260909314881:web:2080f2d3ea32537a6c27c0"
 });
 
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage(function (payload) {
-  const n = payload.notification || {};
-  self.registration.showNotification(n.title || "pause", {
-    body: n.body || "",
-    icon: "icon-192.png",
-    badge: "icon-192.png"
+// Initialize FCM messaging, but never let a hiccup here abort the whole worker.
+try {
+  const messaging = firebase.messaging();
+  messaging.onBackgroundMessage(function (payload) {
+    const n = payload.notification || {};
+    self.registration.showNotification(n.title || "pause", {
+      body: n.body || "",
+      icon: "icon-192.png",
+      badge: "icon-192.png"
+    });
   });
-});
+} catch (e) {
+  // Fallback: if firebase.messaging() isn't usable in this context, still show pushes.
+  self.addEventListener("push", function (event) {
+    let data = {};
+    try { data = event.data ? event.data.json() : {}; } catch (_) {}
+    const n = data.notification || {};
+    event.waitUntil(
+      self.registration.showNotification(n.title || "pause", {
+        body: n.body || "",
+        icon: "icon-192.png",
+        badge: "icon-192.png"
+      })
+    );
+  });
+}
