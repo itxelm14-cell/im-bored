@@ -1,38 +1,35 @@
-importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+/* pause · self-contained push service worker.
+   No importScripts / no external Firebase fetch — so corporate security agents,
+   ad blockers, or flaky networks can't stop it from registering. Token
+   registration (getToken) happens in the page, which loads Firebase normally.
+   This worker's only job is to display an incoming push and handle taps. */
 
-firebase.initializeApp({
-  apiKey: "AIzaSyBwADa3_5tT-cUTDHEsWZnHsy3ZIjgZHmI",
-  authDomain: "izzies-apps.firebaseapp.com",
-  projectId: "izzies-apps",
-  storageBucket: "izzies-apps.firebasestorage.app",
-  messagingSenderId: "260909314881",
-  appId: "1:260909314881:web:2080f2d3ea32537a6c27c0"
-});
+self.addEventListener("install", function () { self.skipWaiting(); });
+self.addEventListener("activate", function (event) { event.waitUntil(self.clients.claim()); });
 
-// Initialize FCM messaging, but never let a hiccup here abort the whole worker.
-try {
-  const messaging = firebase.messaging();
-  messaging.onBackgroundMessage(function (payload) {
-    const n = payload.notification || {};
-    self.registration.showNotification(n.title || "pause", {
-      body: n.body || "",
+self.addEventListener("push", function (event) {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (e) { payload = {}; }
+  const n = payload.notification || payload.data || payload || {};
+  const title = n.title || "pause";
+  const body = n.body || "";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: body,
       icon: "icon-192.png",
       badge: "icon-192.png"
-    });
-  });
-} catch (e) {
-  // Fallback: if firebase.messaging() isn't usable in this context, still show pushes.
-  self.addEventListener("push", function (event) {
-    let data = {};
-    try { data = event.data ? event.data.json() : {}; } catch (_) {}
-    const n = data.notification || {};
-    event.waitUntil(
-      self.registration.showNotification(n.title || "pause", {
-        body: n.body || "",
-        icon: "icon-192.png",
-        badge: "icon-192.png"
-      })
-    );
-  });
-}
+    })
+  );
+});
+
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+      for (const c of list) {
+        if (c.url.indexOf("/im-bored/") !== -1 && "focus" in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow("/im-bored/");
+    })
+  );
+});
