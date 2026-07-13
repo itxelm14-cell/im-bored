@@ -616,7 +616,7 @@ function firebaseReady(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey); 
    Firebase console → ⚙ Project settings → Cloud Messaging → Web Push certificates
    → "Generate key pair" → copy the key string in between the quotes below.
    Leave it "" and push simply stays off (everything else still works).          */
-const FCM_VAPID_KEY = "oSkLitLcCnRT_Ms-u3X1X3Y_-SuCJc6l4bbXKHYRKhs";
+const FCM_VAPID_KEY = "";
 
 
 /* ── CATEGORIES (broad) + their quote pools ─────────────────────────────────
@@ -1848,6 +1848,7 @@ function syncEntryToWall(entry){
     ref.set({
       type:"journal", authorId:profile.id, author:profile.name, avatar:profile.avatar,
       date:entry.date, ts:Date.now(), mood:entry.mood||null, energy:entry.energy||null,
+      tired:(entry.am&&entry.am.tired!=null)?entry.am.tired:null,
       grateful:entry.grateful||"", journal:entry.journal||"", acts:actNames.length?actNames:null
     }).catch(e=>{ console.error(e); });
     return;
@@ -1859,6 +1860,7 @@ function syncEntryToWall(entry){
   wallPosts.push({
     id: makeId(), type:"journal", authorId: profile.id, author: profile.name, avatar: profile.avatar,
     date: entry.date, ts: Date.now(), mood: entry.mood, energy: entry.energy,
+    tired:(entry.am&&entry.am.tired!=null)?entry.am.tired:null,
     grateful: entry.grateful, journal: entry.journal, acts: actNames, reactions:{}, comments:[]
   });
   saveData();
@@ -1906,7 +1908,7 @@ function makeWallPostButtons(){
   const mk = (html, onclick) => { const b=document.createElement("button"); b.className="wall-photo-btn"; b.innerHTML=html; b.onclick=onclick; return b; };
   btnRow.appendChild(mk("📸 Photo", ()=>document.getElementById("photo-input").click()));
   btnRow.appendChild(mk("🎬 Video <span style='font-size:10px;color:#656d4a'>·10s</span>", ()=>document.getElementById("video-input").click()));
-  btnRow.appendChild(mk("🎧 Stims <span style='font-size:10px;color:#656d4a'>·30s</span>", ()=>document.getElementById("audio-input").click()));
+  btnRow.appendChild(mk("🎧 Stims <span style='font-size:10px;color:#656d4a'>·30s</span>", ()=>openStimsRecorder()));
   btnRow.appendChild(mk("📝 Text", ()=>openTextComposer()));
   return btnRow;
 }
@@ -1977,7 +1979,7 @@ function makeWallPost(p){
     const moodEmojis=["","😞","😔","😐","🙂","😄"];
     const actChips = (p.acts||[]).map(a=>`<span class="wall-act-chip">${a.emoji} ${escapeHtml(a.name)}</span>`).join("");
     body = `
-      ${p.mood?`<div style="margin-bottom:6px"><span class="wall-mood">${moodEmojis[p.mood]||"😐"}</span><span style="font-size:12px;color:#17210f">${p.energy?("energy: "+p.energy):""}</span></div>`:""}
+      ${(p.mood||p.tired!=null)?`<div style="margin-bottom:6px">${p.mood?`<span class="wall-mood">${moodEmojis[p.mood]||"😐"}</span>`:""}<span style="font-size:12px;color:#17210f">${p.energy?("energy: "+p.energy):""}${p.tired!=null?((p.energy?" · ":"")+"😴 tired "+p.tired+"/10"):""}</span></div>`:""}
       ${p.grateful?`<div class="wall-caption" style="margin-bottom:6px">🙏 ${escapeHtml(p.grateful)}</div>`:""}
       ${p.journal?`<div class="wall-caption">${escapeHtml(p.journal)}</div>`:""}
       ${actChips?`<div class="wall-acts">${actChips}</div>`:""}`;
@@ -2093,6 +2095,85 @@ function fbPostAudio(file){
   const ref=fb.storage.ref("audio/"+fbUser.uid+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7));
   ref.put(file).then(()=>ref.getDownloadURL()).then(url=>fb.db.ref("wall").push({type:"audio",authorId:profile.id,author:profile.name,avatar:profile.avatar,ts:Date.now(),mediaUrl:url,caption})).catch(e=>{ console.error(e); alert("Upload failed: "+(e&&e.message||"")); });
 }
+
+/* ── STIMS · in-app mic recorder (≤30s) ──────────────────────────────────── */
+let stimRec = { mr:null, chunks:[], blob:null, mime:"", timer:null, secs:0 };
+function openStimsRecorder(){
+  ensureProfile();
+  const ov=document.createElement("div"); ov.className="modal-overlay"; ov.id="stims-recorder";
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-header"><h3>🎧 Record a stim</h3><button class="modal-close" onclick="closeStimsRecorder()">✕</button></div>
+    <p style="font-size:12px;color:#17210f;margin-bottom:6px">Up to 30 seconds of calming audio.</p>
+    <div id="stim-rec-body"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  renderStimIdle();
+}
+function renderStimIdle(){
+  const b=document.getElementById("stim-rec-body"); if(!b) return;
+  b.innerHTML=`
+    <div style="text-align:center;padding:10px 0 4px">
+      <div id="stim-timer" class="timer-display" style="font-size:34px">00:00</div>
+      <button class="primary-btn" style="margin-top:10px" onclick="startStimRec()">🎙️ Start recording</button>
+      <div style="margin-top:12px"><button class="back-btn" style="display:inline-block;padding:4px 0;color:#17210f" onclick="closeStimsRecorder();document.getElementById('audio-input').click()">…or upload an audio file</button></div>
+    </div>`;
+}
+function startStimRec(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder==="undefined"){
+    alert("Recording isn't supported here — try 'upload an audio file' instead 🎧"); return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    stimRec.chunks=[]; stimRec.blob=null;
+    let mr; try { mr=new MediaRecorder(stream); } catch(_){ try{ mr=new MediaRecorder(stream,{mimeType:"audio/mp4"}); }catch(__){ alert("Recording isn't supported here — try uploading a file 🎧"); stream.getTracks().forEach(t=>t.stop()); return; } }
+    stimRec.mr=mr; stimRec.mime=mr.mimeType||"audio/mp4";
+    mr.ondataavailable=e=>{ if(e.data && e.data.size) stimRec.chunks.push(e.data); };
+    mr.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); stimRec.blob=new Blob(stimRec.chunks,{type:stimRec.mime}); renderStimReview(); };
+    mr.start();
+    stimRec.secs=0; renderStimRecording();
+    stimRec.timer=setInterval(()=>{ stimRec.secs++; updateStimTimer(); if(stimRec.secs>=30) stopStimRec(); },1000);
+  }).catch(e=>{ console.error(e); alert("Couldn't reach the mic. Allow microphone access, or upload a file instead 🎧"); });
+}
+function renderStimRecording(){
+  const b=document.getElementById("stim-rec-body"); if(!b) return;
+  b.innerHTML=`
+    <div style="text-align:center;padding:10px 0 4px">
+      <div id="stim-timer" class="timer-display" style="font-size:34px;color:#8f4a26">00:00</div>
+      <div style="font-size:12px;color:#8f4a26;margin-bottom:10px">● recording… (auto-stops at 0:30)</div>
+      <button class="primary-btn" onclick="stopStimRec()">⏹ Stop</button>
+    </div>`;
+  updateStimTimer();
+}
+function updateStimTimer(){ const el=document.getElementById("stim-timer"); if(el){ const m=Math.floor(stimRec.secs/60),s=stimRec.secs%60; el.textContent=String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"); } }
+function stopStimRec(){ if(stimRec.timer){ clearInterval(stimRec.timer); stimRec.timer=null; } if(stimRec.mr && stimRec.mr.state!=="inactive"){ try{ stimRec.mr.stop(); }catch(_){ } } }
+function renderStimReview(){
+  const b=document.getElementById("stim-rec-body"); if(!b || !stimRec.blob) return;
+  const url=URL.createObjectURL(stimRec.blob);
+  b.innerHTML=`
+    <div style="font-size:11px;color:#17210f;text-align:center;margin-bottom:8px">${String(Math.floor(stimRec.secs/60)).padStart(2,"0")}:${String(stimRec.secs%60).padStart(2,"0")} recorded — have a listen</div>
+    <audio class="wall-audio" src="${url}" controls style="margin-bottom:12px"></audio>
+    <div class="add-sub-row">
+      <button class="add-sub-btn confirm" onclick="postStimRecording()">Post stim 🎧</button>
+      <button class="add-sub-btn cancel" onclick="renderStimIdle()">Re-record</button>
+    </div>`;
+}
+function postStimRecording(){
+  if(!stimRec.blob) return;
+  const blob=stimRec.blob;
+  const caption=prompt("Add a caption? (optional)")||"";
+  if(firebaseReady() && fb && fbUser){
+    const ext=(stimRec.mime.indexOf("mp4")>-1||stimRec.mime.indexOf("aac")>-1)?"m4a":(stimRec.mime.indexOf("webm")>-1)?"webm":(stimRec.mime.indexOf("ogg")>-1)?"ogg":"audio";
+    const ref=fb.storage.ref("audio/"+fbUser.uid+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7)+"."+ext);
+    ref.put(blob).then(()=>ref.getDownloadURL())
+      .then(url=>fb.db.ref("wall").push({type:"audio",authorId:profile.id,author:profile.name,avatar:profile.avatar,ts:Date.now(),mediaUrl:url,caption}))
+      .then(()=>closeStimsRecorder())
+      .catch(e=>{ console.error(e); alert("Upload failed: "+((e&&e.message)||"")); });
+  } else {
+    const reader=new FileReader();
+    reader.onload=e=>{ wallPosts.push({id:makeId(),type:"audio",authorId:profile.id,author:profile.name,avatar:profile.avatar,ts:Date.now(),dataUrl:e.target.result,caption,reactions:{},comments:[]}); try{saveData();}catch(_){ } closeStimsRecorder(); renderWall(); };
+    reader.readAsDataURL(blob);
+  }
+}
+function closeStimsRecorder(){ stopStimRec(); const o=document.getElementById("stims-recorder"); if(o) o.remove(); stimRec={mr:null,chunks:[],blob:null,mime:"",timer:null,secs:0}; }
 
 function addCustomReaction(postId){
   let e=prompt("React with any emoji ✨"); if(!e) return;
