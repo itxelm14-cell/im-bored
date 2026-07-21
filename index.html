@@ -23,7 +23,7 @@ body {
   min-height: 100vh;
   font-family: 'Cormorant Garamond', Georgia, serif;
   color: #17210f;
-  padding-bottom: 90px;
+  padding-bottom: calc(90px + env(safe-area-inset-bottom));
 }
 #app { width: 100%; max-width: 420px; margin: 0 auto; padding: 24px 16px 20px; }
 .view { display: none; }
@@ -32,9 +32,10 @@ body {
 /* NAV BAR */
 .nav-bar {
 position: fixed; bottom: 0; left: 0; right: 0;
-background: rgba(242,227,198,0.8); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 2px solid #6f5a3c;
+background: rgba(242,227,198,0.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 2px solid #6f5a3c;
 display: flex; justify-content: space-around; align-items: center;
-padding: 10px 0 20px; z-index: 50;
+padding: 10px 0 calc(20px + env(safe-area-inset-bottom)); z-index: 50;
+-webkit-transform: translateZ(0); transform: translateZ(0); will-change: transform;
 }
 .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 10px; border-radius: 12px; transition: all 0.2s; background: none; border: none; color: #17210f; font-family: inherit; }
 .nav-item.active { color: #17210f; }
@@ -379,6 +380,9 @@ h3 { font-size: 16px; font-weight: 700; color: #17210f; letter-spacing: 1px; }
     <div style="text-align:center;margin-top:16px">
       <button class="ghost-btn accent" onclick="openAddModal()">➕ Add New Activity</button>
     </div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="back-btn" style="display:inline-block;padding:6px 0;color:#cdbfa0" onclick="reloadSeedForIdentity()">🔄 Load latest starter list</button>
+    </div>
   </div>
 
   <!-- DETAIL -->
@@ -457,45 +461,35 @@ h3 { font-size: 16px; font-weight: 700; color: #17210f; letter-spacing: 1px; }
       <div id="am-live-note" class="gentle-note" style="display:none"></div>
       <div class="field-label">Will to be productive 🚀 <span class="slider-val" id="am-prod-val">5</span></div>
       <input type="range" min="1" max="10" value="5" id="am-prod" class="jslider" oninput="setSlider('am-prod',this.value)">
-      <div class="field-label">3 most important things today 🎯</div>
-      <textarea id="am-important" class="field-input" rows="3" placeholder="One per line…"></textarea>
-      <div class="field-label">3 things you're grateful for 🙏</div>
-      <textarea id="am-gratitude" class="field-input" rows="3" placeholder="One per line…"></textarea>
-      <div class="field-label">3 things that would make today great ✨</div>
-      <textarea id="am-great" class="field-input" rows="3" placeholder="One per line…"></textarea>
+      <div class="field-label">Most important thing today 🎯</div>
+      <textarea id="am-important" class="field-input" rows="2" placeholder="The one thing that matters most today…"></textarea>
       <div class="field-label">Daily affirmation 🌿</div>
       <div class="affirm-cats" id="am-affirm-cats" style="margin-bottom:8px"></div>
       <div id="am-affirm-options"></div>
       <textarea id="am-affirm" class="field-input" rows="2" placeholder="Tap a need above for one, or write your own…"></textarea>
-      <div class="share-toggle" onclick="toggleShare()" style="margin-top:16px">
-        <div class="share-switch"><div class="share-knob"></div></div>
+      <div class="share-toggle" onclick="toggleShareAM()" style="margin-top:16px">
+        <div class="share-switch" id="am-share-switch"><div class="share-knob"></div></div>
         <div>
-          <div class="share-label">Share this entry with safe space 💜</div>
+          <div class="share-label">Share morning with safe space 💜</div>
           <div class="share-sub">Off = stays private on your device</div>
         </div>
       </div>
-      <button class="primary-btn" style="margin-top:4px" onclick="saveTodayEntry()">Save morning ☀️</button>
+      <button class="primary-btn" style="margin-top:4px" onclick="saveTodayEntry('am')">Save morning ☀️</button>
     </div>
 
     <div id="pm-panel" style="display:none;background:#f2e3c6;border:2px solid #6f5a3c;border-radius:16px;padding:18px;margin-bottom:16px">
-      <div class="field-label">What did you do today? ✅</div>
-      <div id="today-activities-list"></div>
       <div class="field-label">How was your day? 📝</div>
       <textarea id="journal-input" class="field-input" rows="3" placeholder="What happened, what's on your mind…"></textarea>
-      <div class="field-label">Something I learned 📚</div>
-      <textarea id="pm-learned" class="field-input" rows="2" placeholder="One thing you learned today…"></textarea>
-      <div class="field-label">A good deed 🤝</div>
-      <textarea id="pm-good" class="field-input" rows="2" placeholder="Something kind you did…"></textarea>
-      <div class="field-label">3 great things that happened today 🌟</div>
-      <textarea id="pm-great" class="field-input" rows="3" placeholder="One per line…"></textarea>
-      <div class="share-toggle" id="share-toggle" onclick="toggleShare()" style="margin-top:16px">
-        <div class="share-switch" id="share-switch"><div class="share-knob"></div></div>
+      <div class="field-label">2 things you're grateful for 🙏</div>
+      <textarea id="pm-grateful" class="field-input" rows="2" placeholder="One per line…"></textarea>
+      <div class="share-toggle" id="share-toggle" onclick="toggleSharePM()" style="margin-top:16px">
+        <div class="share-switch" id="pm-share-switch"><div class="share-knob"></div></div>
         <div>
-          <div class="share-label">Share this entry with safe space 💜</div>
+          <div class="share-label">Share evening with safe space 💜</div>
           <div class="share-sub">Off = stays private on your device</div>
         </div>
       </div>
-      <button class="primary-btn" style="margin-top:4px" onclick="saveTodayEntry()">Save evening 🌙</button>
+      <button class="primary-btn" style="margin-top:4px" onclick="saveTodayEntry('pm')">Save evening 🌙</button>
     </div>
 
     <div id="past-entries"></div>
@@ -743,66 +737,84 @@ function isPicker(s){ return s.type === "picker"; }
 
 function P(id,name){ return {id,name,st:"todo",type:"recurring",recurMode:"infinite",count:0,streak:0,lastStreakDate:null,lastDone:null}; }
 function T(id,name){ return {id,name,st:"todo"}; }
+function G(id,name,n){ return {id,name,st:"todo",type:"recurring",recurMode:"target",target:n,count:0,streak:0,lastStreakDate:null,lastDone:null}; }
+function PK(id,name){ return {id,name,st:"todo",type:"picker",images:[],count:0,streak:0,lastStreakDate:null,lastDone:null}; }
 
 const DEFAULT_ACTIVITIES = [
   {id:"piano",name:"Piano",emoji:"🎹",tags:["music","focus"],minTime:15,energy:["low","medium"],lastDone:null,subs:[
-    T("p1","Pick 4 songs to learn"),T("p2","Song 1 – Right hand only"),
-    T("p3","Song 1 – Left hand only"),T("p4","Song 1 – Both hands"),
-    T("p5","Song 2 – Right hand only"),T("p6","Song 2 – Left hand only"),
-    T("p7","Song 2 – Both hands"),T("p8","Song 3 – Right hand only"),
-    T("p9","Song 3 – Left hand only"),T("p10","Song 3 – Both hands"),
-    T("p11","Song 4 – Right hand only"),T("p12","Song 4 – Left hand only"),
-    T("p13","Song 4 – Both hands"),T("p14","Play a full song start to finish"),
+    G("pi1","Skinny Love – Intro RH",10),G("pi2","Skinny Love – Intro LH",10),G("pi3","Skinny Love – Verse RH",10),
+    G("pi4","Skinny Love – Verse LH",10),G("pi5","Skinny Love – Chorus RH",10),G("pi6","Skinny Love – Chorus LH",10),
+    G("pi7","Skinny Love – Outro RH",10),G("pi8","Skinny Love – Outro LH",10),G("pi9","loml – Intro RH",10),
+    G("pi10","loml – Intro LH",10),G("pi11","loml – Verse RH",10),G("pi12","loml – Verse LH",10),
+    G("pi13","loml – Chorus RH",10),G("pi14","loml – Chorus LH",10),G("pi15","loml – Outro RH",10),
+    G("pi16","loml – Outro LH",10),
   ]},
   {id:"drums",name:"Drums",emoji:"🥁",tags:["music","movement"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
-    P("d1","Free play – match a song"),P("d2","Clone Hero session"),
-    P("d3","Pattern practice with click track"),T("d4","Learn a new genre pattern"),
-    T("d5","Record a freestyle and listen back"),P("d6","Play along to a full song"),
+    G("dr1","Misery Business – Main Beat",10),G("dr2","Misery Business – Fills",10),G("dr3","Misery Business – Full Song",10),
+    G("dr4","Chance Encounters – Main Beat",10),G("dr5","Chance Encounters – Fills",10),G("dr6","Chance Encounters – Full Song",10),
+    G("dr7","Daydream – Main Beat",10),G("dr8","Daydream – Fills",10),G("dr9","Daydream – Full Song",10),
+    G("dr10","King for a Day – Main Beat",10),G("dr11","King for a Day – Fills",10),G("dr12","King for a Day – Full Song",10),
+    G("dr13","When I Get Home You're So Dead – Main Beat",10),G("dr14","When I Get Home You're So Dead – Fills",10),G("dr15","When I Get Home You're So Dead – Full Song",10),
   ]},
-  {id:"songwriting",name:"Song Writing",emoji:"🎵",tags:["music","creative"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
-    T("sw1","Song 1 – Write verse lyrics"),T("sw2","Song 1 – Write chorus"),
-    T("sw3","Song 1 – Chord/melody structure"),T("sw4","Song 1 – Full demo recorded"),
-    T("sw5","Song 2 – Brainstorm concept"),T("sw6","Song 2 – Full draft"),
-    T("sw7","Song 3 – Full draft"),T("sw8","Song 4 – Full draft"),
-    T("sw9","Song 5 – Full draft"),T("sw10","Review & refine all 5 songs"),
-    T("sw11","Record EP demo"),
+  {id:"production",name:"Music Production",emoji:"🎵",tags:["music","creative"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
+    G("mp1","Sex – Drum Production",10),G("mp2","Sex – Piano/Guitar",10),G("mp3","Sex – Vocals",10),
+    G("mp4","Sex – Arrangement",10),G("mp5","Sex – Mix",10),G("mp6","Eden – Drum Production",10),
+    G("mp7","Eden – Piano/Guitar",10),G("mp8","Eden – Vocals",10),G("mp9","Eden – Arrangement",10),
+    G("mp10","Eden – Mix",10),G("mp11","Good Person – Drum Production",10),G("mp12","Good Person – Piano/Guitar",10),
+    G("mp13","Good Person – Vocals",10),G("mp14","Good Person – Arrangement",10),G("mp15","Good Person – Mix",10),
+    G("mp16","Waiting Room – Drum Production",10),G("mp17","Waiting Room – Piano/Guitar",10),G("mp18","Waiting Room – Vocals",10),
+    G("mp19","Waiting Room – Arrangement",10),G("mp20","Waiting Room – Mix",10),G("mp21","Arcade – Drum Production",10),
+    G("mp22","Arcade – Piano/Guitar",10),G("mp23","Arcade – Vocals",10),G("mp24","Arcade – Arrangement",10),
+    G("mp25","Arcade – Mix",10),
   ]},
-  {id:"guitar",name:"Guitar",emoji:"🎸",tags:["music","creative"],minTime:15,energy:["low","medium","high"],lastDone:null,subs:[
-    P("g1","Warmup – chord transitions"),T("g2","Learn a new song"),
-    T("g3","Play and sing at the same time"),P("g4","Fingerpicking practice"),
-    P("g5","Free jam for 10 min"),
+  {id:"acoustic",name:"Acoustic Guitar",emoji:"🎸",tags:["music","creative"],minTime:15,energy:["low","medium","high"],lastDone:null,subs:[
+    G("ag1","Waiting Room – Intro",10),G("ag2","Waiting Room – Verse",10),G("ag3","Waiting Room – Chorus",10),
+    G("ag4","Waiting Room – Bridge",10),G("ag5","Waiting Room – Outro",10),
   ]},
-  {id:"writing",name:"Writing",emoji:"✍️",tags:["creative","focus"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
-    T("wr1","Outline book chapters"),T("wr2","Write Chapter 1 draft"),
-    T("wr3","Write Chapter 2 draft"),T("wr4","Edit a previous chapter"),
-    P("wr5","Free write 15 min – no editing"),
+  {id:"electric",name:"Electric Guitar",emoji:"⚡",tags:["music","creative"],minTime:15,energy:["low","medium","high"],lastDone:null,subs:[
+    G("eg1","In the Living Room – Intro",10),G("eg2","In the Living Room – Verse",10),G("eg3","In the Living Room – Chorus",10),
+    G("eg4","In the Living Room – Bridge",10),G("eg5","In the Living Room – Outro",10),
+  ]},
+  {id:"writing",name:"Writing (A+L)",emoji:"✍️",tags:["creative","focus"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
+    P("wrp1","Write 100 words"),P("wrp2","Write 250 words"),P("wrp3","Write 500 words"),
+    P("wrp4","Write 1,000 words"),T("wro1","Outline next chapter"),T("wro2","Draft one scene"),
+    T("wro3","Edit one scene"),T("wro4","Brainstorm a character"),T("wro5","Brainstorm a location"),
+    T("wro6","Brainstorm a conflict"),T("wro7","Brainstorm a plot twist"),T("wro8","Worldbuilding session"),
+    T("wro9","Timeline review"),T("wro10","Connect loose scenes"),T("wro11","Revise previous chapter"),
+    G("wrg1","Finish a chapter",10),G("wrg2","Finish an act",10),G("wrg3","Finish a character arc",10),
+    G("wrg4","Finish a full revision pass",10),G("wrg5","Finish Book 1",10),G("wrg6","Finish Book 2",10),
+    G("wrg7","Finish Book 3",10),
   ]},
   {id:"poetry",name:"Poetry",emoji:"📝",tags:["creative","calm"],minTime:10,energy:["low","medium"],lastDone:null,subs:[
-    P("po1","Write a poem about today"),T("po2","Use poem as journal entry"),
-    T("po3","Edit an old poem"),T("po4","Research publishing options"),
-    T("po5","Submit a poem somewhere"),
+    T("poo1","Write a poem about how you're feeling"),T("poo2","Write a poem about a memory"),T("poo3","Write a poem about love"),
+    T("poo4","Write a poem about loss"),T("poo5","Write a poem about hope"),T("poo6","Write a poem about fear"),
+    T("poo7","Write a poem inspired by nature"),T("poo8","Write a poem from someone else's perspective"),T("poo9","Write a poem from a random prompt"),
+    T("poo10","Rewrite an old poem"),T("poo11","Edit poetry book"),G("pog1","Complete first draft of poetry collection",10),
+    G("pog2","Send manuscript to a copy editor",10),G("pog3","Review copy editor revisions",10),G("pog4","Format final manuscript",10),
+    G("pog5","Publish poetry book",10),
   ]},
   {id:"reading",name:"Reading",emoji:"📚",tags:["calm","focus"],minTime:15,energy:["low","medium"],lastDone:null,subs:[
-    P("r1","Read 20 pages"),T("r2","Find next book to read"),
-    P("r3","Highlight key ideas / take notes"),T("r4","Write a reflection"),
+    P("rdp1","Read for 15 minutes"),G("rdg1","Read one chapter",10),G("rdg2","Finish one book",10),
   ]},
   {id:"discover",name:"Discover Artist",emoji:"🎧",tags:["calm","music"],minTime:10,energy:["low"],lastDone:null,subs:[
-    T("da1","Listen to Gracie Abrams"),T("da2","Explore Taylor Swift deep cuts"),
-    T("da3","Find Jensen's music"),T("da4","Explore Phoebe Bridgers"),
-    P("da5","Save 5 new songs to a playlist"),
+    T("da1","Listen to one new artist"),T("da2","Listen to one full album"),T("da3","Save favorite songs"),
+    T("da4","Read the artist's background"),T("da5","Analyze songwriting"),T("da6","Analyze production"),
+    T("da7","Learn a favorite song"),T("da8","Add artist to favorites"),
+  ]},
+  {id:"stretch",name:"Stretching",emoji:"🧘",tags:["calm","movement"],minTime:10,energy:["low","medium"],lastDone:null,subs:[
+    PK("st_pick","Pick a stretch"),
+  ]},
+  {id:"gym",name:"Gym",emoji:"💪",tags:["movement"],minTime:45,energy:["high"],lastDone:null,subs:[
+    P("gymp1","Workout"),G("gymg1","Complete Push Day",10),G("gymg2","Complete Pull Day",10),
+    G("gymg3","Complete Leg Day",10),G("gymg4","Complete Core Workout",10),G("gymg5","Complete Cardio Session",10),
+    G("gymg6","Complete Mobility Session",10),G("gymg7","Increase weight or reps on one lift",10),
+  ]},
+  {id:"painting",name:"Painting",emoji:"🎨",tags:["creative","home"],minTime:20,energy:["low","medium"],lastDone:null,subs:[
+    PK("pt_pick","Pick something to paint"),
   ]},
   {id:"interior",name:"Interior Design",emoji:"🏠",tags:["creative","home"],minTime:20,energy:["medium","high"],lastDone:null,subs:[
     T("id1","Rearrange one area"),P("id2","Pinterest / mood board session"),
     T("id3","Buy one thing to improve the space"),T("id4","Deep clean + redesign a corner"),
-  ]},
-  {id:"stretch",name:"Stretching",emoji:"🧘",tags:["calm","movement"],minTime:10,energy:["low","medium"],lastDone:null,subs:[
-    P("st1","Morning 10-min stretch"),P("st2","Hip flexor + back focus"),
-    P("st3","Full body 20-min flow"),P("st4","Breathing + light meditation"),
-  ]},
-  {id:"gym",name:"Gym",emoji:"💪",tags:["movement"],minTime:45,energy:["high"],lastDone:null,subs:[
-    P("gym1","Upper body strength"),P("gym2","Lower body / legs"),
-    P("gym3","Cardio / stamina session"),P("gym4","Mobility and flexibility"),
-    P("gym5","Full body circuit"),
   ]},
   {id:"mikey",name:"Mikey Business",emoji:"💼",tags:["building","focus"],minTime:30,energy:["medium","high"],lastDone:null,subs:[
     P("mb1","Work on a revenue stream"),P("mb2","Client outreach / follow-up"),
@@ -909,7 +921,7 @@ let selectedTags = [];
 let selectedEnergy = [];
 let todayMood = null;
 let todayEnergy = null;
-let todayShare = false;
+let amShare = false, pmShare = false;
 let newSubType = "oneoff";
 let timerInterval = null;
 let timerSeconds = 0;
@@ -1368,12 +1380,15 @@ function showSmartSuggest() {
   if (!pick) { content.innerHTML = '<p style="color:#17210f;text-align:center">Log some journal entries first to get smart suggestions!</p>'; return; }
 
   const prog = getProgress(pick);
+  const _openSubs = (pick.subs||[]).filter(s => !isPicker(s) && !((isGoal(s)||!isRecurring(s)) && s.st==="done"));
+  const suggestedSub = _openSubs.length ? _openSubs[Math.floor(Math.random()*_openSubs.length)] : null;
   const smartCard = document.createElement("div");
   smartCard.className = "smart-card";
   smartCard.innerHTML = `
     <div class="smart-emoji">${pick.emoji}</div>
     <div class="smart-name">${pick.name}</div>
     <div class="smart-reason">${reason}</div>
+    ${suggestedSub?`<div style="margin-top:12px;padding:10px 12px;background:#e2d6bf;border:2px solid #6f5a3c;border-radius:12px;font-size:13px;color:#17210f">✨ Start with: <strong>${escapeHtml(suggestedSub.name)}</strong></div>`:""}
     <div style="margin-top:12px">
       <div class="progress-bar"><div class="progress-fill" style="width:${prog.pct}%"></div></div>
       <div style="font-size:11px;color:#17210f;margin-top:6px">${prog.done}/${prog.total} tasks done</div>
@@ -1642,37 +1657,49 @@ function addPickerPhotos(actId, subId){
   document.getElementById("picker-photo-input").click();
 }
 function onPickerPhotos(ev){
-  const files = ev.target.files; ev.target.value = "";
-  if (!files || !files.length) return;
+  const files = Array.from(ev.target.files || []); ev.target.value = "";
+  if (!files.length) return;
   const sub = getPickerSub();
   if (!sub) return;
   sub.images = sub.images || [];
   const useFb = firebaseReady() && fb && fbUser;
-  let remaining = files.length;
-  const done = () => {
-    if (--remaining === 0) {
-      try { saveData(); } catch(_) {}
-      renderDetail();
-      if (!document.getElementById("picker-modal").classList.contains("hidden")) renderPickerBody();
+  const toast = m => { const t=document.getElementById("picker-toast"); if (t) t.textContent = m; };
+  if (useFb) toast("Uploading…");
+  let failed = 0;
+
+  const uploadToStorage = (blobOrData, isDataUrl) => new Promise(resolve => {
+    const path = "picker/"+fbUser.uid+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+    const ref = fb.storage.ref(path);
+    const task = isDataUrl ? ref.putString(blobOrData, "data_url") : ref.put(blobOrData);
+    task.then(() => ref.getDownloadURL())
+        .then(url => { sub.images.push({ url, path }); resolve(true); })
+        .catch(e => { console.error("picker upload failed", e); resolve(false); });
+  });
+
+  const handleOne = (f) => new Promise(resolve => {
+    if (useFb) {
+      // try a compressed JPEG first (small + universally viewable); if the image
+      // can't be decoded (e.g. some HEIC), upload the raw file instead.
+      compressImageFile(f, dataUrl => {
+        const attempt = dataUrl ? uploadToStorage(dataUrl, true) : uploadToStorage(f, false);
+        attempt.then(ok => {
+          if (ok) return resolve();
+          // Storage rejected (rules?) — keep it locally so the photo isn't lost
+          if (dataUrl) sub.images.push(dataUrl); else failed++;
+          resolve();
+        });
+      });
+    } else {
+      compressImageFile(f, dataUrl => { if (dataUrl) sub.images.push(dataUrl); else failed++; resolve(); });
     }
-  };
-  if (useFb) { const t=document.getElementById("picker-toast"); if(t) t.textContent="Uploading…"; }
-  Array.from(files).forEach(f => {
-    compressImageFile(f, dataUrl => {
-      if (!dataUrl) { done(); return; }
-      if (useFb) {
-        const path = "picker/"+fbUser.uid+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
-        const ref = fb.storage.ref(path);
-        ref.putString(dataUrl, "data_url")
-          .then(() => ref.getDownloadURL())
-          .then(url => { sub.images.push({ url, path }); })
-          .catch(e => { console.error("picker upload failed", e); sub.images.push(dataUrl); }) // keep it locally rather than lose it
-          .finally(done);
-      } else {
-        sub.images.push(dataUrl);
-        done();
-      }
-    });
+  });
+
+  Promise.all(files.map(handleOne)).then(() => {
+    try { saveData(); } catch(_) {}
+    renderDetail();
+    if (!document.getElementById("picker-modal").classList.contains("hidden")) renderPickerBody();
+    const t=document.getElementById("picker-toast");
+    if (t) t.textContent = failed ? ("⚠️ "+failed+" photo(s) couldn't be added — check your Storage rules (auth != null), then retry.") : "";
   });
 }
 function deletePickerImage(i){
@@ -1720,26 +1747,10 @@ function renderToday() {
   setSlider("am-live", am.willLive!=null?am.willLive:5); onWillLive(document.getElementById("am-live").value);
   setSlider("am-prod", am.willProductive!=null?am.willProductive:5);
   document.getElementById("am-important").value = am.important||"";
-  document.getElementById("am-gratitude").value = am.gratitude || (e&&e.grateful) || "";
-  document.getElementById("am-great").value = am.greatIf||"";
   { const _aff=document.getElementById("am-affirm"); if(_aff) _aff.value = am.affirmation || randomAffirmation(); }
   document.getElementById("journal-input").value = pm.did!=null?pm.did:((e&&e.journal)||"");
-  document.getElementById("pm-learned").value = pm.learned||"";
-  document.getElementById("pm-good").value = pm.goodDeed||"";
-  document.getElementById("pm-great").value = pm.greatThings||"";
-  todayShare = !!(e&&e.shared); setShareSwitch();
-  todayCheckedActivities = (e&&e.doneActivities)?[...e.doneActivities]:[];
-  const list = document.getElementById("today-activities-list"); list.innerHTML = "";
-  activities.forEach(act => {
-    const div = document.createElement("div");
-    div.style.cssText = "display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:2px solid #6f5a3c";
-    const checked = todayCheckedActivities.includes(act.id);
-    div.innerHTML = `
-      <div onclick="toggleTodayActivity('${act.id}',this)" style="width:20px;height:20px;border-radius:50%;border:2px solid #6f5a3c;background:${checked?"#656d4a":"#f2e3c6"};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:11px;color:#fff">${checked?"✓":""}</div>
-      <span class="today-emoji" style="font-size:14px">${act.emoji}</span>
-      <span style="font-size:13px;color:#17210f">${act.name}</span>`;
-    list.appendChild(div);
-  });
+  { const _g=document.getElementById("pm-grateful"); if(_g) _g.value = pm.gratitude || (e&&e.grateful) || ""; }
+  amShare = !!(e&&e.amShared); pmShare = !!(e&&e.pmShared); setShareSwitches();
   renderPastEntries();
 }
 function setSlider(id,val){ const el=document.getElementById(id); if(el){ el.value=val; } const v=document.getElementById(id+"-val"); if(v) v.textContent=val; }
@@ -1794,16 +1805,15 @@ function renderPastEntries(){
     const am=e.am||{}, pm=e.pm||{};
     const div = document.createElement("div"); div.className = "journal-entry";
     div.innerHTML = `
-      <div class="journal-date">${e.date===todayDateStr()?"Today":friendlyDate(e.date)} ${e.shared?'<span style="color:#656d4a">· shared 💜</span>':''}</div>
+      <div class="journal-date">${e.date===todayDateStr()?"Today":friendlyDate(e.date)} ${e.amShared?'<span style="color:#656d4a">· 🌅 shared</span>':''}${e.pmShared?'<span style="color:#656d4a">· 🌙 shared</span>':''}</div>
       <div class="journal-mood-row">
         <span style="font-size:20px">${moodEmojis[e.mood]||"😐"}</span>
         <span style="font-size:12px;color:#17210f;margin-left:4px">Energy: ${e.energy||"—"}</span>
-        ${(e.doneActivities&&e.doneActivities.length)?`<span style="font-size:11px;color:#656d4a;margin-left:8px">✓ ${e.doneActivities.length}</span>`:""}
       </div>
-      ${(am.gratitude||e.grateful)?`<div class="journal-text" style="margin-bottom:6px">🙏 ${escapeHtml(am.gratitude||e.grateful)}</div>`:""}
+      ${am.important?`<div class="journal-text" style="margin-bottom:6px">🎯 ${escapeHtml(am.important)}</div>`:""}
       ${am.affirmation?`<div class="journal-text" style="margin-bottom:6px;font-style:italic">🌿 ${escapeHtml(am.affirmation)}</div>`:""}
       ${(pm.did||e.journal)?`<div class="journal-text">${escapeHtml(pm.did||e.journal)}</div>`:""}
-      ${pm.greatThings?`<div class="journal-text" style="margin-top:6px">🌟 ${escapeHtml(pm.greatThings)}</div>`:""}`;
+      ${(pm.gratitude||e.grateful)?`<div class="journal-text" style="margin-top:6px">🙏 ${escapeHtml(pm.gratitude||e.grateful)}</div>`:""}`;
     pastEl.appendChild(div);
   });
 }
@@ -1820,49 +1830,63 @@ function selectTodayEnergy(val, render=true) {
   todayEnergy = val;
   if (render) document.querySelectorAll("#today-energy-picker .energy-opt").forEach(b => b.classList.toggle("selected", b.textContent.toLowerCase()===val));
 }
-function toggleShare(){ todayShare = !todayShare; setShareSwitch(); }
-function setShareSwitch(){ document.querySelectorAll(".share-switch").forEach(sw=>sw.classList.toggle("on", todayShare)); }
+function toggleShareAM(){ amShare = !amShare; setShareSwitches(); }
+function toggleSharePM(){ pmShare = !pmShare; setShareSwitches(); }
+function setShareSwitches(){
+  const a=document.getElementById("am-share-switch"); if(a) a.classList.toggle("on", amShare);
+  const p=document.getElementById("pm-share-switch"); if(p) p.classList.toggle("on", pmShare);
+}
 
-function saveTodayEntry() {
+function saveTodayEntry(which) {
+  which = (which==="pm") ? "pm" : "am";
   const gv = (id)=>{ const el=document.getElementById(id); return el?el.value.trim():""; };
   const gn = (id)=>{ const el=document.getElementById(id); return el?parseInt(el.value,10):null; };
-  const am = { tired:gn("am-tired"), willLive:gn("am-live"), willProductive:gn("am-prod"),
-    important:gv("am-important"), gratitude:gv("am-gratitude"), greatIf:gv("am-great"), affirmation:gv("am-affirm") };
-  const pm = { did:gv("journal-input"), learned:gv("pm-learned"), goodDeed:gv("pm-good"), greatThings:gv("pm-great") };
-  const shareNow = todayShare;
-  const entry = { date: todayDateStr(), mood: todayMood, energy: todayEnergy, grateful: am.gratitude, journal: pm.did, doneActivities: [...todayCheckedActivities], shared: shareNow, am, pm };
-  todayCheckedActivities.forEach(actId => { const act = activities.find(a=>a.id===actId); if (act) act.lastDone = todayDateStr(); });
-  const existing = journalEntries.findIndex(e=>e.date===todayDateStr());
-  if (existing > -1) journalEntries[existing] = entry; else journalEntries.push(entry);
-  syncEntryToWall(entry); saveData();
-  alert(shareNow ? "✅ Saved & shared with safe space 💜" : "✅ Saved 💛");
+  const idx = journalEntries.findIndex(e=>e.date===todayDateStr());
+  const entry = idx>-1 ? Object.assign({}, journalEntries[idx]) : { date: todayDateStr() };
+  entry.am = Object.assign({}, entry.am||{});
+  entry.pm = Object.assign({}, entry.pm||{});
+
+  if (which === "pm") {
+    entry.pm.did = gv("journal-input");
+    entry.pm.gratitude = gv("pm-grateful");
+    entry.pmShared = pmShare;
+  } else {
+    entry.mood = todayMood;
+    entry.energy = todayEnergy;
+    entry.am = { tired:gn("am-tired"), willLive:gn("am-live"), willProductive:gn("am-prod"),
+      important:gv("am-important"), affirmation:gv("am-affirm") };
+    entry.amShared = amShare;
+  }
+  // back-compat derived fields
+  entry.grateful = entry.pm.gratitude || "";
+  entry.journal = entry.pm.did || "";
+
+  if (idx > -1) journalEntries[idx] = entry; else journalEntries.push(entry);
+  syncEntryToWall(entry, which); saveData();
+  const shared = which==="pm" ? entry.pmShared : entry.amShared;
+  alert(shared ? "✅ Saved & shared with safe space 💜" : "✅ Saved 💛");
   renderToday();
 }
 function ensureProfile(){ if (!profile) profile = { name:"Izzie", avatar:"✨", id:"izzie" }; }
-function syncEntryToWall(entry){
+function syncEntryToWall(entry, which){
+  which = (which==="pm") ? "pm" : "am";
+  const am = entry.am||{}, pm = entry.pm||{};
+  const shared = which==="pm" ? entry.pmShared : entry.amShared;
+  ensureProfile();
+  const base = { type:"journal", part:which, authorId:profile.id, author:profile.name, avatar:profile.avatar, date:entry.date, ts:Date.now() };
+  const payload = (which==="am")
+    ? Object.assign(base, { mood:entry.mood||null, energy:entry.energy||null, tired:(am.tired!=null?am.tired:null), important:am.important||"", affirmation:am.affirmation||"" })
+    : Object.assign(base, { journal:pm.did||"", grateful:pm.gratitude||"" });
+
   if (firebaseReady() && fb && fbUser) {
-    const key = "j_" + fbUser.uid + "_" + entry.date;
-    const ref = fb.db.ref("wall/" + key);
-    if (!entry.shared) { ref.remove().catch(()=>{}); return; }
-    const actNames = (entry.doneActivities||[]).map(id => { const a=activities.find(x=>x.id===id); return a?{emoji:a.emoji,name:a.name}:null; }).filter(Boolean);
-    ref.set({
-      type:"journal", authorId:profile.id, author:profile.name, avatar:profile.avatar,
-      date:entry.date, ts:Date.now(), mood:entry.mood||null, energy:entry.energy||null,
-      tired:(entry.am&&entry.am.tired!=null)?entry.am.tired:null,
-      grateful:entry.grateful||"", journal:entry.journal||"", acts:actNames.length?actNames:null
-    }).catch(e=>{ console.error(e); });
+    const ref = fb.db.ref("wall/j_" + fbUser.uid + "_" + entry.date + "_" + which);
+    if (!shared) { ref.remove().catch(()=>{}); return; }
+    ref.set(payload).catch(e=>{ console.error(e); });
     return;
   }
-  ensureProfile();
-  wallPosts = wallPosts.filter(p => !(p.type==="journal" && p.authorId===profile.id && p.date===entry.date));
-  if (!entry.shared) { saveData(); return; }
-  const actNames = (entry.doneActivities||[]).map(id => { const a=activities.find(x=>x.id===id); return a?{emoji:a.emoji,name:a.name}:null; }).filter(Boolean);
-  wallPosts.push({
-    id: makeId(), type:"journal", authorId: profile.id, author: profile.name, avatar: profile.avatar,
-    date: entry.date, ts: Date.now(), mood: entry.mood, energy: entry.energy,
-    tired:(entry.am&&entry.am.tired!=null)?entry.am.tired:null,
-    grateful: entry.grateful, journal: entry.journal, acts: actNames, reactions:{}, comments:[]
-  });
+  wallPosts = wallPosts.filter(p => !(p.type==="journal" && p.part===which && p.authorId===profile.id && p.date===entry.date));
+  if (!shared) { saveData(); return; }
+  wallPosts.push(Object.assign({ id: makeId(), reactions:{}, comments:[] }, payload));
   saveData();
 }
 function renderWall() {
@@ -1977,12 +2001,14 @@ function makeWallPost(p){
     body = `<div class="wall-type-badge">${_badge}</div><div class="wall-textpost ${_tt}">${escapeHtml(p.text||"")}</div>`;
   } else if (p.type==="journal") {
     const moodEmojis=["","😞","😔","😐","🙂","😄"];
-    const actChips = (p.acts||[]).map(a=>`<span class="wall-act-chip">${a.emoji} ${escapeHtml(a.name)}</span>`).join("");
+    const partBadge = p.part==="pm" ? `<div class="wall-type-badge">🌙 evening</div>` : p.part==="am" ? `<div class="wall-type-badge">🌅 morning</div>` : "";
     body = `
+      ${partBadge}
       ${(p.mood||p.tired!=null)?`<div style="margin-bottom:6px">${p.mood?`<span class="wall-mood">${moodEmojis[p.mood]||"😐"}</span>`:""}<span style="font-size:12px;color:#17210f">${p.energy?("energy: "+p.energy):""}${p.tired!=null?((p.energy?" · ":"")+"😴 tired "+p.tired+"/10"):""}</span></div>`:""}
+      ${p.important?`<div class="wall-caption" style="margin-bottom:6px">🎯 ${escapeHtml(p.important)}</div>`:""}
+      ${p.affirmation?`<div class="wall-caption" style="margin-bottom:6px;font-style:italic">🌿 ${escapeHtml(p.affirmation)}</div>`:""}
       ${p.grateful?`<div class="wall-caption" style="margin-bottom:6px">🙏 ${escapeHtml(p.grateful)}</div>`:""}
-      ${p.journal?`<div class="wall-caption">${escapeHtml(p.journal)}</div>`:""}
-      ${actChips?`<div class="wall-acts">${actChips}</div>`:""}`;
+      ${p.journal?`<div class="wall-caption">${escapeHtml(p.journal)}</div>`:""}`;
   }
   const reactions = p.reactions||{};
   const _def=["❤️","🔥","👏","🎉"];
@@ -2895,6 +2921,15 @@ function seedForIdentity(id){
   const SEEDS = { izzie: DEFAULT_ACTIVITIES, claw: CLAW_ACTIVITIES, kathy: KATHY_ACTIVITIES };
   activities = SEEDS[id] ? JSON.parse(JSON.stringify(SEEDS[id])) : [];
   saveData();
+}
+function reloadSeedForIdentity(){
+  const id = (profile && profile.id) || "izzie";
+  const label = (PEOPLE[id] && PEOPLE[id].name) || "you";
+  if(!confirm("Replace your current activities with the latest built-in list for "+label+"?\n\nThis only changes your activity list — your journals and safe-space feed are NOT affected.")) return;
+  seedForIdentity(id);
+  currentFilter = "all";
+  renderTracker();
+  alert("✅ Loaded the latest activity list.");
 }
 function showIdentityGate(){
   const ov = document.createElement("div");
